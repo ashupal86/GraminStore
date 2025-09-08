@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: graminstore_postgres
+    environment:
+      POSTGRES_DB: graminstore
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - graminstore_network
+
+  # Backend API (commented out for development)
+  # Uncomment when deploying to production
+  # backend:
+  #   build: ./backend
+  #   container_name: graminstore_backend
+  #   environment:
+  #     DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/graminstore
+  #     SECRET_KEY: your-super-secret-key-change-in-production
+  #     ALGORITHM: HS256
+  #     ACCESS_TOKEN_EXPIRE_MINUTES: 30
+  #   ports:
+  #     - "8001:8001"
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - graminstore_network
+  #   volumes:
+  #     - ./backend:/app
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+volumes:
+  postgres_data:
+
+networks:
+  graminstore_network:
+    driver: bridge
