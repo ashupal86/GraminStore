@@ -76,6 +76,20 @@ GraminStore/
 
 ## 🚀 Quick Start
 
+### 🌐 Live Deployment (Heroku)
+
+**GraminStore Backend is now live on Heroku!**
+
+- **🌍 Live API**: https://graminstore-backend-53e13181bd39.herokuapp.com/
+- **📚 API Documentation**: https://graminstore-backend-53e13181bd39.herokuapp.com/docs
+- **⚙️ Admin Dashboard**: https://graminstore-backend-53e13181bd39.herokuapp.com/admin
+- **🔍 Health Check**: https://graminstore-backend-53e13181bd39.herokuapp.com/
+
+**Test Credentials:**
+- **Admin**: admin@graminstore.com / admin123
+- **Merchant**: merchant123@example.com / merchant123
+- **User**: user123@example.com / user123
+
 ### Prerequisites
 - Python 3.11+
 - Docker & Docker Compose
@@ -124,7 +138,46 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 The API will be available at:
 - **API Documentation**: http://localhost:8001/docs
 - **Admin Dashboard**: http://localhost:8001/admin
-- **Main Interface**: http://localhost:8001
+
+## 🚀 Heroku Deployment
+
+The backend is already deployed on Heroku with the following configuration:
+
+### Deployment Details
+- **Platform**: Heroku
+- **Database**: Heroku Postgres (Essential-0 plan)
+- **Python Version**: 3.12.0
+- **Auto-deployment**: Git push to `master` branch
+
+### Environment Variables
+- `DATABASE_URL`: Automatically set by Heroku Postgres addon
+- `SECRET_KEY`: Generated secure key for JWT tokens
+- `ADMIN_EMAIL`: admin@graminstore.com
+- `ADMIN_PASSWORD`: admin123
+
+### Deployment Commands
+```bash
+# Login to Heroku
+heroku login
+
+# Create app (already done)
+heroku create graminstore-backend
+
+# Add PostgreSQL database
+heroku addons:create heroku-postgresql:essential-0 --app graminstore-backend
+
+# Set environment variables
+heroku config:set SECRET_KEY="$(openssl rand -base64 32)" --app graminstore-backend
+heroku config:set ADMIN_EMAIL="admin@graminstore.com" ADMIN_PASSWORD="admin123" --app graminstore-backend
+
+# Deploy
+git push heroku master
+```
+
+### Monitoring
+- **Logs**: `heroku logs --tail --app graminstore-backend`
+- **Status**: `heroku ps --app graminstore-backend`
+- **Config**: `heroku config --app graminstore-backend`
 
 ## 📊 Database Schema
 
