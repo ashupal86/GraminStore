@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     port: int = 8001
     
     # CORS Configuration
-    cors_origins: list = ["http://localhost:3000", "http://localhost:3001"]
+    cors_origins: list = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
     
     class Config:
         env_file = ".env"
