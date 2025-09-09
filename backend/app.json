@@ -1,0 +1,42 @@
+{
+  "name": "GraminStore Backend",
+  "description": "FastAPI backend for GraminStore PWA with PostgreSQL database",
+  "repository": "https://github.com/yourusername/graminstore",
+  "logo": "https://via.placeholder.com/150x150/4CAF50/FFFFFF?text=GS",
+  "keywords": ["fastapi", "postgresql", "pwa", "ecommerce", "rural"],
+  "env": {
+    "DATABASE_URL": {
+      "description": "PostgreSQL database URL",
+      "required": true
+    },
+    "SECRET_KEY": {
+      "description": "Secret key for JWT token generation",
+      "generator": "secret"
+    },
+    "ADMIN_EMAIL": {
+      "description": "Admin email for SQLAdmin dashboard",
+      "value": "admin@graminstore.com"
+    },
+    "ADMIN_PASSWORD": {
+      "description": "Admin password for SQLAdmin dashboard",
+      "generator": "secret"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:mini",
+      "as": "DATABASE"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}

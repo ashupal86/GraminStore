@@ -107,7 +107,7 @@ def create_fake_merchants(count=5):
             
             merchant = Merchant(
                 name=fake.name(),
-                email=fake.email(),
+                email=fake.unique.email(),
                 phone=fake.phone_number(),
                 password_hash=get_password_hash("merchant123"),
                 aadhar_number=fake.random_number(digits=12),
@@ -138,7 +138,7 @@ def create_fake_users(count=100):
         for i in range(count):
             user = User(
                 name=fake.name(),
-                email=fake.email(),
+                email=fake.unique.email(),
                 phone=fake.phone_number(),
                 password_hash=get_password_hash("user123")
             )

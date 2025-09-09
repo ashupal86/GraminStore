@@ -69,9 +69,11 @@ logs/
 *.tmp
 *.temp
 
-*
+# Node.js
 node_modules/
 dist/
+
+# Environment files
 .env
 .env.local
 .env.development.local
