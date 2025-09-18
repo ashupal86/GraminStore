@@ -1,7 +1,7 @@
 import type { AuthResponse, LoginRequest, RegisterUserRequest, RegisterMerchantRequest, User, Merchant } from '../types/auth';
 
-// const API_BASE_URL = 'https://graminstore-backend-53e13181bd39.herokuapp.com'; // Hosted backend URL
-const API_BASE_URL = 'http://192.168.1.10:8009';
+const API_BASE_URL = 'https://graminstore-backend-53e13181bd39.herokuapp.com'; // Hosted backend URL
+// const API_BASE_URL = 'http://192.168.1.10:8009';
 class ApiService {
   private _baseURL: string;
 
