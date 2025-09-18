@@ -21,6 +21,7 @@ class GuestUser(Base):
     
     # Relationships
     merchant = relationship("Merchant", back_populates="guest_users")
+    orders = relationship("Order", back_populates="guest_user", cascade="all, delete-orphan", lazy="select")
     
     def __repr__(self):
         return f"<GuestUser(id={self.id}, merchant_id={self.merchant_id})>"

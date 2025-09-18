@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
+import { wsService } from '../../services/websocket';
 import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -79,8 +80,8 @@ const EnhancedMerchantDashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [timeRange, setTimeRange] = useState<'daily' | 'weekly' | 'monthly' | 'total'>('monthly');
   const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'customers' | 'analytics'>('overview');
-  const [wsConnection, setWsConnection] = useState<WebSocket | null>(null);
-
+  const [newOrderNotification, setNewOrderNotification] = useState<any>(null);
+  const [wsConnected, setWsConnected] = useState(false);
   const itemsPerPage = 10;
 
   useEffect(() => {
@@ -88,35 +89,62 @@ const EnhancedMerchantDashboard: React.FC = () => {
     setupWebSocket();
     
     return () => {
-      if (wsConnection) {
-        wsConnection.close();
-      }
+      wsService.disconnect();
     };
   }, [timeRange]);
 
-  const setupWebSocket = () => {
+  const setupWebSocket = async () => {
     if (token) {
-      const ws = apiService.createWebSocketConnection(token);
-      
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-        setWsConnection(ws);
-      };
-      
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log('Real-time update:', data);
-        loadDashboardData();
-      };
-      
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-      
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        setWsConnection(null);
-      };
+      try {
+        await wsService.connect(token);
+        console.log('WebSocket connected for merchant dashboard');
+        setWsConnected(true);
+        
+        // Listen for new orders
+        wsService.subscribe('new_order', (data) => {
+          console.log('New order received:', data);
+          // Show notification for new order
+          setNewOrderNotification(data);
+          // Auto-hide notification after 5 seconds
+          setTimeout(() => {
+            setNewOrderNotification(null);
+          }, 5000);
+          // Refresh dashboard data when new order comes in
+          loadDashboardData();
+        });
+
+        // Listen for order updates
+        wsService.subscribe('orders_update', (data) => {
+          console.log('Orders updated:', data);
+          // Refresh dashboard data when orders are updated
+          loadDashboardData();
+        });
+
+        // Listen for connection status changes
+        wsService.subscribe('*', (data) => {
+          if (data.type === 'pong') {
+            setWsConnected(true);
+          }
+        });
+
+        // Set up periodic ping to keep connection alive
+        const pingInterval = setInterval(() => {
+          if (wsService.isConnected()) {
+            wsService.ping();
+          } else {
+            setWsConnected(false);
+          }
+        }, 30000); // Ping every 30 seconds
+
+        // Clean up interval on component unmount
+        return () => {
+          clearInterval(pingInterval);
+        };
+
+      } catch (error) {
+        console.error('Failed to connect WebSocket:', error);
+        setWsConnected(false);
+      }
     }
   };
 
@@ -246,6 +274,34 @@ const EnhancedMerchantDashboard: React.FC = () => {
             Comprehensive analytics and transaction management
           </p>
         </div>
+
+        {/* New Order Notification */}
+        {newOrderNotification && (
+          <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 animate-pulse">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <span className="text-green-600 dark:text-green-400 mr-3 text-2xl">🛒</span>
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                    New Order Received!
+                  </h3>
+                  <p className="text-green-700 dark:text-green-300">
+                    Order #{newOrderNotification.data?.order_id} - ₹{newOrderNotification.data?.amount?.toFixed(2)}
+                  </p>
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    Customer: {newOrderNotification.data?.customer_name || 'Guest'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setNewOrderNotification(null)}
+                className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Time Range Selector */}
         <div className="mb-6">
@@ -450,12 +506,12 @@ const EnhancedMerchantDashboard: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Real-time Status</h3>
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full ${wsConnection ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                <div className={`w-3 h-3 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {wsConnection ? 'Connected' : 'Disconnected'}
+                    {wsConnected ? 'Connected' : 'Disconnected'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500">Live transaction updates</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500">Live order updates</p>
                 </div>
               </div>
             </div>

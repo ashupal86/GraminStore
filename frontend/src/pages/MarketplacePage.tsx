@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
-import type { Merchant, Category, MarketplaceState, SearchResult, CartItem, InventoryItem } from '../types/marketplace';
+import { wsService } from '../services/websocket';
+import { useAuth } from '../contexts/AuthContext';
+import type { Category, MarketplaceState, SearchResult, CartItem, InventoryItem } from '../types/marketplace';
 
 const MarketplacePage = () => {
   const { t } = useTranslation();
+  const { token, user } = useAuth();
   const [state, setState] = useState<MarketplaceState>({
     merchants: [],
     categories: [],
@@ -17,6 +20,8 @@ const MarketplacePage = () => {
     searchQuery: '',
     viewMode: 'merchants',
   });
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [checkoutSuccess, setCheckoutSuccess] = useState(false);
 
   // Category mapping with icons and colors
   const categoryMapping: Record<string, Category> = {
@@ -38,10 +43,45 @@ const MarketplacePage = () => {
     loadCategories();
   }, []);
 
+  // Setup websocket connection for order updates (only for logged-in users)
+  useEffect(() => {
+    if (token) {
+      const connectWebSocket = async () => {
+        try {
+          await wsService.connect(token);
+          console.log('WebSocket connected for order updates');
+        } catch (error) {
+          console.error('Failed to connect WebSocket:', error);
+        }
+      };
+
+      connectWebSocket();
+
+      // Listen for new orders
+      const unsubscribeNewOrder = wsService.subscribe('new_order', (data) => {
+        console.log('New order received:', data);
+        // You can add notification logic here
+      });
+
+      // Listen for order updates
+      const unsubscribeOrderUpdate = wsService.subscribe('orders_update', (data) => {
+        console.log('Orders updated:', data);
+        // You can add UI update logic here
+      });
+
+      return () => {
+        unsubscribeNewOrder();
+        unsubscribeOrderUpdate();
+        wsService.disconnect();
+      };
+    }
+  }, [token]);
+
   const loadMerchants = async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
       const merchants = await apiService.getMerchantsWithInventory();
+      console.log('Loaded merchants:', merchants);
       setState(prev => ({ ...prev, merchants, loading: false }));
     } catch (error) {
       setState(prev => ({ 
@@ -93,7 +133,7 @@ const MarketplacePage = () => {
     }
   }, []);
 
-  const addToCart = (item: InventoryItem, merchantName: string) => {
+  const addToCart = (item: InventoryItem | SearchResult, merchantName: string) => {
     const existingItem = state.cart.find(cartItem => cartItem.id === item.id);
     
     if (existingItem) {
@@ -112,15 +152,17 @@ const MarketplacePage = () => {
         unit_price: item.unit_price,
         quantity: 1,
         unit: item.unit,
-        merchant_id: item.merchant_id,
+        merchant_id: 'merchant' in item ? item.merchant.id : (item as InventoryItem).merchant_id,
         merchant_name: merchantName,
-        category: item.category
+        category: item.category || 'general'
       };
       
       setState(prev => ({
         ...prev,
         cart: [...prev.cart, newCartItem]
       }));
+      
+      console.log('Added item to cart:', newCartItem);
     }
   };
 
@@ -143,6 +185,94 @@ const MarketplacePage = () => {
         item.id === itemId ? { ...item, quantity } : item
       )
     }));
+  };
+
+  const handleCheckout = async () => {
+    if (state.cart.length === 0) {
+      setState(prev => ({ ...prev, error: 'Cart is empty' }));
+      return;
+    }
+
+    setIsCheckingOut(true);
+    setState(prev => ({ ...prev, error: null }));
+
+    try {
+      console.log('Current cart state:', state.cart);
+      console.log('Cart item types:', state.cart.map(item => ({
+        id: typeof item.id,
+        name: typeof item.name,
+        category: typeof item.category,
+        unit_price: typeof item.unit_price,
+        quantity: typeof item.quantity,
+        merchant_id: typeof item.merchant_id
+      })));
+      
+      // Validate and clean cart items
+      const validatedCartItems = state.cart
+        .filter(item => {
+          // More strict validation
+          return item && 
+                 typeof item.id === 'number' && 
+                 typeof item.name === 'string' && 
+                 item.name.trim() !== '' &&
+                 typeof item.unit_price === 'number' &&
+                 typeof item.quantity === 'number' &&
+                 typeof item.merchant_id === 'number';
+        })
+        .map(item => {
+          // Ensure all fields are properly typed
+          const validatedItem = {
+            id: Number(item.id),
+            name: String(item.name).trim(),
+            unit_price: Number(item.unit_price),
+            quantity: Number(item.quantity),
+            unit: String(item.unit || 'piece'),
+            merchant_id: Number(item.merchant_id),
+            merchant_name: String(item.merchant_name || 'Unknown Merchant'),
+            category: String(item.category || 'general')
+          };
+          
+          console.log('Validated item:', validatedItem);
+          return validatedItem;
+        });
+
+      const checkoutData = {
+        cart_items: validatedCartItems,
+        payment_method: 'online',
+        customer_name: user?.name || 'Guest Customer',
+        customer_phone: user?.phone || null,
+        is_guest_order: !user
+      };
+
+      console.log('Checkout data being sent:', checkoutData);
+      console.log('Cart items validation:', validatedCartItems);
+
+      // Check if we have valid cart items
+      if (validatedCartItems.length === 0) {
+        throw new Error('No valid items in cart');
+      }
+
+      // Use token if available, otherwise pass null for guest checkout
+      const response = await apiService.processCheckout(checkoutData, token || '');
+      
+      setCheckoutSuccess(true);
+      setState(prev => ({ ...prev, cart: [] }));
+      
+      // Show success message for 3 seconds
+      setTimeout(() => {
+        setCheckoutSuccess(false);
+      }, 3000);
+
+      console.log('Checkout successful:', response);
+    } catch (error: any) {
+      console.error('Checkout failed:', error);
+      setState(prev => ({ 
+        ...prev, 
+        error: error.message || 'Checkout failed. Please try again.' 
+      }));
+    } finally {
+      setIsCheckingOut(false);
+    }
   };
 
   const InventoryItemCard = ({ item, merchantName }: { item: InventoryItem; merchantName: string }) => {
@@ -374,8 +504,12 @@ const MarketplacePage = () => {
                 Total: ₹{totalPrice.toFixed(2)}
               </span>
             </div>
-            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200">
-              Proceed to Checkout
+            <button 
+              onClick={handleCheckout}
+              disabled={isCheckingOut}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200"
+            >
+              {isCheckingOut ? 'Processing...' : 'Proceed to Checkout'}
             </button>
           </div>
         )}
@@ -431,6 +565,16 @@ const MarketplacePage = () => {
             </div>
           </div>
         </div>
+
+        {/* Success State */}
+        {checkoutSuccess && (
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <span className="text-green-600 dark:text-green-400 mr-2">✅</span>
+              <span className="text-green-800 dark:text-green-200">Order placed successfully! The merchant will receive your order.</span>
+            </div>
+          </div>
+        )}
 
         {/* Error State */}
         {state.error && (

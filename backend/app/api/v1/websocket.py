@@ -1,12 +1,12 @@
 """
-WebSocket routes for real-time transaction updates
+WebSocket routes for real-time transaction and order updates
 """
 import json
 from typing import Dict, List
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from app.models.database import get_db
-from app.models.transaction import get_merchant_transactions
+from app.models.transaction import get_merchant_transactions, get_merchant_transactions_by_period
 from app.utils.auth import verify_token
 
 router = APIRouter(prefix="/ws", tags=["WebSocket"])
@@ -50,12 +50,16 @@ class ConnectionManager:
     
     async def send_to_merchant(self, merchant_id: int, message: dict):
         """Send message to all connections of a specific merchant"""
+        print(f"DEBUG: Attempting to send to merchant {merchant_id}, connections: {merchant_id in self.merchant_connections}")
         if merchant_id in self.merchant_connections:
+            print(f"DEBUG: Found {len(self.merchant_connections[merchant_id])} connections for merchant {merchant_id}")
             disconnected = []
             for websocket in self.merchant_connections[merchant_id]:
                 try:
                     await websocket.send_text(json.dumps(message))
-                except:
+                    print(f"DEBUG: Message sent to merchant {merchant_id}")
+                except Exception as e:
+                    print(f"DEBUG: Error sending to merchant {merchant_id}: {e}")
                     disconnected.append(websocket)
             
             # Remove disconnected websockets
@@ -81,12 +85,12 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@router.websocket("/transaction-history/{token}")
-async def websocket_transaction_history(
+@router.websocket("/orders/{token}")
+async def websocket_orders(
     websocket: WebSocket,
     token: str
 ):
-    """WebSocket endpoint for real-time transaction history updates"""
+    """WebSocket endpoint for real-time order and transaction updates"""
     # Verify token
     payload = verify_token(token)
     if not payload:
@@ -109,11 +113,12 @@ async def websocket_transaction_history(
             message = json.loads(data)
             
             # Handle different message types
-            if message.get("type") == "get_transactions":
-                # Send transaction history
+            if message.get("type") == "get_orders":
+                # Send order/transaction history
                 if user_type == "merchant":
-                    transactions = get_merchant_transactions(
+                    transactions = get_merchant_transactions_by_period(
                         merchant_id=user_id,
+                        days=message.get("days", 30),
                         limit=message.get("limit", 50),
                         offset=message.get("offset", 0)
                     )
@@ -123,17 +128,17 @@ async def websocket_transaction_history(
                         transaction_list.append({
                             "transaction_id": txn[0],
                             "user_id": txn[1],
-                            "guest_user_id": txn[2],
-                            "timestamp": txn[3].isoformat() if txn[3] else None,
-                            "amount": float(txn[4]),
-                            "type": txn[5],
-                            "description": txn[6],
-                            "payment_method": txn[7],
-                            "reference_number": txn[8]
+                            "guest_user_id": txn[7],
+                            "timestamp": txn[2].isoformat() if txn[2] else None,
+                            "amount": float(txn[3]),
+                            "type": txn[4],
+                            "description": txn[5],
+                            "payment_method": txn[6],
+                            "is_guest_order": txn[7] is not None
                         })
                     
                     response = {
-                        "type": "transaction_history",
+                        "type": "orders_update",
                         "data": transaction_list,
                         "merchant_id": user_id
                     }
@@ -151,22 +156,29 @@ async def websocket_transaction_history(
         manager.disconnect(websocket, user_id, user_type)
 
 
-async def notify_transaction_update(merchant_id: int, transaction_data: dict):
-    """Notify all connected clients about a new transaction"""
+async def notify_order_update(merchant_id: int, order_data: dict):
+    """Notify all connected clients about a new order/transaction"""
     message = {
-        "type": "new_transaction",
-        "data": transaction_data,
+        "type": "new_order",
+        "data": order_data,
         "merchant_id": merchant_id,
-        "timestamp": transaction_data.get("timestamp")
+        "timestamp": order_data.get("timestamp")
     }
+    
+    print(f"DEBUG: Sending WebSocket notification to merchant {merchant_id}: {message}")
     
     # Send to merchant
     await manager.send_to_merchant(merchant_id, message)
     
-    # If transaction has a user_id, send to that user too
-    if transaction_data.get("user_id"):
-        await manager.send_to_user(transaction_data["user_id"], message)
+    # If order has a user_id, send to that user too
+    if order_data.get("user_id"):
+        await manager.send_to_user(order_data["user_id"], message)
+
+
+async def notify_transaction_update(merchant_id: int, transaction_data: dict):
+    """Notify all connected clients about a new transaction (legacy function)"""
+    await notify_order_update(merchant_id, transaction_data)
 
 
 # Export manager for use in other modules
-__all__ = ["manager", "notify_transaction_update"]
+__all__ = ["manager", "notify_transaction_update", "notify_order_update"]

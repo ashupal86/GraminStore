@@ -348,6 +348,66 @@ class ApiService {
       headers: this.getAuthHeaders(token),
     });
   }
+
+  // Order processing endpoints
+  async processCheckout(checkoutData: any, token?: string): Promise<any> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add auth headers only if token is provided
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return this.request<any>('/api/v1/orders/checkout', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(checkoutData),
+    });
+  }
+
+  async getMerchantOrders(merchantId: number, token: string, limit: number = 50, offset: number = 0): Promise<any> {
+    return this.request<any>(`/api/v1/orders/merchant/${merchantId}?limit=${limit}&offset=${offset}`, {
+      headers: this.getAuthHeaders(token),
+    });
+  }
+
+  async subscribePushNotifications(subscriptionData: any): Promise<any> {
+    return this.request<any>('/api/v1/orders/push/subscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.getToken()}`
+      },
+      body: JSON.stringify(subscriptionData)
+    });
+  }
+
+  async unsubscribePushNotifications(): Promise<any> {
+    return this.request<any>('/api/v1/orders/push/unsubscribe', {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${this.getToken()}`
+      }
+    });
+  }
+
+  async updateOrderStatus(orderId: string, status: string, token?: string): Promise<any> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add auth headers only if token is provided
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return this.request<any>(`/api/v1/orders/${orderId}/status?status=${encodeURIComponent(status)}`, {
+      method: 'PUT',
+      headers
+    });
+  }
 }
 
 export const apiService = new ApiService();
