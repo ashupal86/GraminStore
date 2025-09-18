@@ -1,457 +1,354 @@
-# 🏪 GraminStore Backend API
+# GraminStore - Dual-Role PWA for Merchants and Consumers
 
-A comprehensive backend API for a dual-role PWA application serving both **Merchants** and **Consumers**. Built with FastAPI, PostgreSQL, and modern web technologies.
+A comprehensive Progressive Web Application (PWA) that bridges merchants and consumers with powerful transaction management, real-time analytics, and seamless payment solutions for modern businesses.
 
-## 🚀 Features
+## 🌟 Features
 
-### 🛍️ For Merchants
-- **MyManager Calculator**: Create transactions directly with calculation interface
-- **Real-time Dashboard**: Bento-grid analytics with sales, top customers, revenue insights
-- **Transaction Management**: Handle both instant payments and pay-later transactions
-- **Guest User Management**: Simplified one-to-one guest user system
-- **WebSocket Updates**: Real-time transaction history updates
+### For Merchants
+- **Real-time Dashboard**: Bento-grid analytics with sales insights, top customers, and revenue tracking
+- **Transaction Management**: Handle instant payments and pay-later transactions with MyManager Calculator interface
+- **Guest User Management**: Simplified one-to-one guest user system for quick transactions
+- **Inventory Management**: Track products, manage stock, and generate purchase lists
+- **Order Management**: Comprehensive order tracking and status updates
+- **Analytics**: Detailed insights with weekly and monthly breakdowns
 
-### 👤 For Users/Consumers
-- **Expense Tracking**: Weekly/monthly expense breakdowns by merchant
+### For Consumers
+- **Expense Tracking**: Weekly and monthly expense breakdowns by merchant
 - **Bill Management**: Track due and paid bills across different merchants
-- **Transaction History**: Complete purchase history with all merchants
-- **User Dashboard**: Personal analytics and spending insights
+- **Transaction History**: Comprehensive payment history and analytics
+- **Marketplace**: Browse and discover merchants and their offerings
 
-### 🔧 Technical Features
-- **JWT Authentication**: Secure login for merchants and users
-- **Dynamic Transaction Tables**: Separate transaction tables per merchant
-- **Simplified Guest Users**: One guest user per transaction (id, merchant_id, transaction_id, timestamp)
-- **WebSocket Support**: Real-time updates and notifications
-- **Admin Dashboard**: SQLAdmin interface for complete system management
-- **API Versioning**: Clean v1 API structure ready for frontend integration
-- **Docker Support**: Containerized PostgreSQL and application
+### Technical Features
+- **PWA Support**: Installable on mobile devices with offline capabilities
+- **Real-time Updates**: WebSocket support for live transaction updates
+- **Multi-language Support**: English, Spanish, French, and Hindi
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
+- **Dark Mode**: Modern UI with dark/light theme support
 
-## 📁 Project Structure
+## 🚀 Live Demo
 
-```
-GraminStore/
-├─ backend/
-│  ├─ app/
-│  │  ├─ api/
-│  │  │  └─ v1/
-│  │  │     ├─ auth.py          # Authentication routes
-│  │  │     ├─ transactions.py  # Transaction management
-│  │  │     ├─ dashboard.py     # Analytics endpoints
-│  │  │     ├─ websocket.py     # Real-time updates
-│  │  │     └─ router.py        # Main API router
-│  │  ├─ models/
-│  │  │  ├─ merchant.py         # Merchant model
-│  │  │  ├─ user.py             # User/consumer model
-│  │  │  ├─ guest_user.py       # Guest user model
-│  │  │  ├─ transaction.py      # Dynamic transaction tables
-│  │  │  ├─ database.py         # Database configuration
-│  │  │  └─ base.py             # Base model class
-│  │  ├─ schemas/
-│  │  │  ├─ auth.py             # Authentication schemas
-│  │  │  ├─ transaction.py      # Transaction schemas
-│  │  │  └─ dashboard.py        # Dashboard schemas
-│  │  ├─ utils/
-│  │  │  ├─ auth.py             # JWT utilities
-│  │  │  ├─ dependencies.py     # FastAPI dependencies
-│  │  │  └─ fake_data.py        # Test data generation
-│  │  ├─ admin.py               # SQLAdmin configuration
-│  │  ├─ config.py              # Application settings
-│  │  └─ main.py                # FastAPI application
-│  ├─ requirements.txt          # Python dependencies
-│  └─ Dockerfile               # Docker configuration
-├─ docker-compose.yml          # Docker Compose setup
-└─ README.md                   # This file
-```
+- **Frontend**: [https://graminstore.devinit.in](https://graminstore.devinit.in)
+- **Backend API**: [https://graminstore-backend-53e13181bd39.herokuapp.com](https://graminstore-backend-53e13181bd39.herokuapp.com)
+- **API Documentation**: [https://graminstore-backend-53e13181bd39.herokuapp.com/docs](https://graminstore-backend-53e13181bd39.herokuapp.com/docs)
 
 ## 🛠️ Tech Stack
 
-- **Framework**: FastAPI
-- **Database**: PostgreSQL (Dockerized)
-- **ORM**: SQLAlchemy with dynamic table creation
-- **Authentication**: JWT with bcrypt password hashing
-- **Admin Interface**: SQLAdmin
-- **Real-time**: WebSockets for live transaction updates
-- **Validation**: Pydantic schemas
-- **Containerization**: Docker & Docker Compose
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for build tooling
+- **Tailwind CSS** for styling
+- **React Router** for navigation
+- **PWA** capabilities with service workers
+- **i18next** for internationalization
 
-## 🚀 Quick Start
+### Backend
+- **FastAPI** (Python 3.12)
+- **PostgreSQL** database
+- **SQLAlchemy** ORM
+- **Alembic** for database migrations
+- **JWT** authentication
+- **WebSocket** support for real-time updates
+- **Redis** for caching (optional)
 
-### 🌐 Live Deployment (Heroku)
+### Deployment
+- **Frontend**: Vercel
+- **Backend**: Heroku
+- **Database**: PostgreSQL (Heroku Postgres)
 
-**GraminStore Backend is now live on Heroku!**
-
-- **🌍 Live API**: https://graminstore-backend-53e13181bd39.herokuapp.com/
-- **📚 API Documentation**: https://graminstore-backend-53e13181bd39.herokuapp.com/docs
-- **⚙️ Admin Dashboard**: https://graminstore-backend-53e13181bd39.herokuapp.com/admin
-- **🔍 Health Check**: https://graminstore-backend-53e13181bd39.herokuapp.com/
-
-**Test Credentials:**
-- **Admin**: admin@graminstore.com / admin123
-- **Merchant**: merchant123@example.com / merchant123
-- **User**: user123@example.com / user123
+## 📦 Installation & Setup
 
 ### Prerequisites
-- Python 3.11+
-- Docker & Docker Compose
+- Node.js 20+ (for frontend)
+- Python 3.12+ (for backend)
+- PostgreSQL 12+
 - Git
 
-### 1. Clone the Repository
+### Backend Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ashupal86/GraminStore.git
+   cd GraminStore/backend
+   ```
+
+2. **Create virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your database URL and other settings
+   ```
+
+5. **Run database migrations**
+   ```bash
+   alembic upgrade head
+   ```
+
+6. **Start the server**
+   ```bash
+   uvicorn app.main:app --reload --port 8009
+   ```
+
+### Frontend Setup
+
+1. **Navigate to frontend directory**
+   ```bash
+   cd ../frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your API URL
+   ```
+
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+## 🗄️ Database Population
+
+The application includes a comprehensive database population system for development and testing purposes.
+
+### Using the API Endpoint
+
+**Endpoint**: `POST /api/v1/admin/populate-database`
+
+**Example Request**:
 ```bash
-git clone <repository-url>
-cd GraminStore
+curl -X POST https://graminstore-backend-53e13181bd39.herokuapp.com/api/v1/admin/populate-database
 ```
 
-### 2. Start PostgreSQL Database
-```bash
-docker-compose up postgres -d
-```
-
-### 3. Setup Backend Environment
-```bash
-cd backend
-
-# Create virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 4. Generate Test Data
-```bash
-python fake_data.py
-```
-
-This will create:
-- 1 admin user
-- 5 merchants with realistic business data
-- 100 users with Indian names and contact info
-- 100+ user transactions per merchant
-- 50+ guest transactions per merchant (using simplified guest user system)
-
-### 5. Run the Backend Server
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
-```
-
-The API will be available at:
-- **API Documentation**: http://localhost:8001/docs
-- **Admin Dashboard**: http://localhost:8001/admin
-
-## 🚀 Heroku Deployment
-
-The backend is already deployed on Heroku with the following configuration:
-
-### Deployment Details
-- **Platform**: Heroku
-- **Database**: Heroku Postgres (Essential-0 plan)
-- **Python Version**: 3.12.0
-- **Auto-deployment**: Git push to `master` branch
-
-### Environment Variables
-- `DATABASE_URL`: Automatically set by Heroku Postgres addon
-- `SECRET_KEY`: Generated secure key for JWT tokens
-- `ADMIN_EMAIL`: admin@graminstore.com
-- `ADMIN_PASSWORD`: admin123
-
-### Deployment Commands
-```bash
-# Login to Heroku
-heroku login
-
-# Create app (already done)
-heroku create graminstore-backend
-
-# Add PostgreSQL database
-heroku addons:create heroku-postgresql:essential-0 --app graminstore-backend
-
-# Set environment variables
-heroku config:set SECRET_KEY="$(openssl rand -base64 32)" --app graminstore-backend
-heroku config:set ADMIN_EMAIL="admin@graminstore.com" ADMIN_PASSWORD="admin123" --app graminstore-backend
-
-# Deploy
-git push heroku master
-```
-
-### Monitoring
-- **Logs**: `heroku logs --tail --app graminstore-backend`
-- **Status**: `heroku ps --app graminstore-backend`
-- **Config**: `heroku config --app graminstore-backend`
-
-## 📊 Database Schema
-
-### Core Tables
-- **merchants**: Store owner accounts with business details
-- **users**: Consumer accounts
-- **guest_users**: Simplified guest user records (id, merchant_id, transaction_id, timestamp)
-- **transaction_<merchant_id>**: Dynamic tables per merchant for transactions
-
-### Dynamic Transaction Tables
-Each merchant gets their own transaction table (`transaction_1`, `transaction_2`, etc.) containing:
-- Transaction ID, User ID, Guest User ID
-- Timestamp, Amount, Type (paid/pay_later)
-- Description, Payment method, Reference number
-
-### Simplified Guest User System
-- **One-to-One Relationship**: Each guest user corresponds to exactly one transaction
-- **Minimal Data**: Only stores essential fields (id, merchant_id, transaction_id, timestamp)
-- **Auto-Creation**: Guest users are automatically created when `is_guest_transaction=true`
-- **No Personal Info**: No names, phones, or personal data stored in guest_users table
-
-## 🔐 Authentication
-
-### Registration Endpoints
-- `POST /api/v1/auth/register/merchant` - Register new merchant
-- `POST /api/v1/auth/register/user` - Register new consumer
-
-### Login Endpoints
-- `POST /api/v1/auth/login/merchant` - Merchant login
-- `POST /api/v1/auth/login/user` - Consumer login
-
-### Protected Routes
-All API endpoints require JWT authentication via `Authorization: Bearer <token>` header.
-
-## 📈 API Endpoints
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/register/merchant` | Register merchant |
-| POST | `/api/v1/auth/register/user` | Register user |
-| POST | `/api/v1/auth/login/merchant` | Merchant login |
-| POST | `/api/v1/auth/login/user` | User login |
-| GET | `/api/v1/auth/profile/merchant` | Get merchant profile |
-| GET | `/api/v1/auth/profile/user` | Get user profile |
-
-### Transactions
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/transactions/create` | Create new transaction |
-| GET | `/api/v1/transactions/history` | Get transaction history |
-| GET | `/api/v1/transactions/analytics` | Get transaction analytics |
-| POST | `/api/v1/transactions/guest-user` | Create guest user |
-| GET | `/api/v1/transactions/guest-users` | List merchant's guest users |
-
-### Dashboard
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/dashboard/merchant` | Merchant dashboard stats |
-| GET | `/api/v1/dashboard/user` | User dashboard stats |
-| GET | `/api/v1/dashboard/user/expenses` | User expense breakdown |
-| GET | `/api/v1/dashboard/merchant/top-customers` | Top customers |
-
-### WebSocket
-| Protocol | Endpoint | Description |
-|----------|----------|-------------|
-| WS | `/api/v1/ws/transaction-history/{token}` | Real-time transaction updates |
-
-## 🌐 WebSocket Usage
-
-Connect to real-time transaction updates:
-
-```javascript
-const token = "your-jwt-token";
-const ws = new WebSocket(`ws://localhost:8001/api/v1/ws/transaction-history/${token}`);
-
-// Request transaction history
-ws.send(JSON.stringify({
-    type: "get_transactions",
-    limit: 50,
-    offset: 0
-}));
-
-// Listen for new transactions
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === "new_transaction") {
-        // Handle new transaction notification
-        console.log("New transaction:", data.data);
+**Response**:
+```json
+{
+  "success": true,
+  "message": "Database populated successfully!",
+  "data": {
+    "merchants": 104,
+    "users": 1757,
+    "guest_users": 3856,
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  "test_credentials": {
+    "admin": {
+      "email": "admin@graminstore.com",
+      "password": "admin123"
+    },
+    "test_merchant": {
+      "email": "test@example.com",
+      "password": "Merchant123"
+    },
+    "merchants": {
+      "password": "merchant123"
+    },
+    "users": {
+      "password": "user123"
     }
-};
+  }
+}
 ```
 
-## 👨‍💼 Admin Dashboard
+### What Gets Created
 
-Access the admin interface at http://localhost:8001/admin
+The database population script creates:
 
-**Authentication Required**:
-- Username: admin
-- Password: admin123
+- **Admin User**: `admin@graminstore.com` / `admin123`
+- **Test Merchant**: `test@example.com` / `Merchant123`
+- **2 Additional Merchants**: Various business types with realistic Indian data
+- **4 Regular Users**: With Indian names and phone numbers
+- **100+ User Transactions**: Per merchant with realistic amounts and descriptions
+- **100+ Guest Transactions**: Per merchant using the simplified guest user system
 
-### Admin Features
-- **Secure Login**: Password-protected admin interface
-- **Merchant Management**: View and manage all merchants
-- **User Management**: View and manage all users  
-- **Guest User Tracking**: View guest user accounts
-- **System Monitoring**: Monitor system activity
-- **Data Access**: Access to all data across merchants
-- **Session Management**: Secure session-based authentication
+### Test Credentials
 
-## 🧪 Testing
+After running the database population:
 
-### Sample Credentials (after running fake_data.py)
-**All users use password**: `merchant123` (merchants) / `user123` (users) / `admin123` (admin)
+| Role | Email | Password | Description |
+|------|-------|----------|-------------|
+| Admin | admin@graminstore.com | admin123 | Full system access |
+| Test Merchant | test@example.com | Merchant123 | Pre-configured merchant |
+| Merchants | [generated] | merchant123 | Random merchants |
+| Users | [generated] | user123 | Random users |
 
-**Test Credentials**: The fake_data.py script will display all test credentials in the console output.
+## 🔧 Development
 
-### Test Data Generation
-The fake_data.py script creates:
-- 1 admin user (admin@graminstore.com / admin123)
-- 5 merchants with different business types (merchant123)
-- 100 users with Indian names and contact info (user123)
-- 100+ user transactions per merchant
-- 50+ guest transactions per merchant (using simplified guest user system)
-- Realistic transaction data with Indian business context
+### Project Structure
 
-## 🐳 Docker Deployment
-
-### Development (PostgreSQL only)
-```bash
-docker-compose up postgres -d
+```
+GraminStore/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/          # API routes
+│   │   ├── models/          # Database models
+│   │   ├── schemas/         # Pydantic schemas
+│   │   ├── services/        # Business logic
+│   │   └── utils/           # Utilities
+│   ├── requirements.txt
+│   └── Procfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   ├── pages/          # Page components
+│   │   ├── services/       # API services
+│   │   ├── types/          # TypeScript types
+│   │   └── locales/        # i18n translations
+│   ├── package.json
+│   └── vite.config.ts
+└── README.md
 ```
 
-### Production (Full stack)
-Uncomment the backend service in `docker-compose.yml` and run:
-```bash
-docker-compose up -d
-```
+### API Endpoints
 
-## ⚙️ Configuration
+#### Authentication
+- `POST /api/v1/auth/register/merchant` - Register merchant
+- `POST /api/v1/auth/register/user` - Register user
+- `POST /api/v1/auth/login/merchant` - Merchant login
+- `POST /api/v1/auth/login/user` - User login
 
-Environment variables can be set in `app/config.py`:
+#### Transactions
+- `POST /api/v1/transactions/create` - Create transaction
+- `GET /api/v1/transactions/history` - Get transaction history
+- `GET /api/v1/transactions/analytics` - Get analytics
 
-```python
-DATABASE_URL = "postgresql://postgres:postgres123@localhost:5432/graminstore"
-SECRET_KEY = "your-super-secret-key-change-in-production"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "admin123"
-```
+#### Dashboard
+- `GET /api/v1/dashboard/merchant` - Merchant dashboard
+- `GET /api/v1/dashboard/user` - User dashboard
 
-## 🔄 Development Workflow
+#### Admin
+- `POST /api/v1/admin/populate-database` - Populate database with test data
+- `GET /api/v1/admin/database-status` - Get database status
 
-1. **Database Changes**: Modify models in `app/models/`
-2. **New Endpoints**: Add routes in `app/api/v1/`
-3. **Schemas**: Update `app/schemas/` for request/response models
-4. **Testing**: Use `/docs` endpoint for interactive testing
-5. **Admin**: Check data in admin dashboard at `/admin`
+#### WebSocket
+- `WS /api/v1/ws/orders/{token}` - Real-time order updates
 
-## 📱 Frontend Integration
+### Database Schema
 
-This backend is designed for seamless React frontend integration:
+#### Core Tables
+- `merchants` - Merchant information and business details
+- `users` - Regular user accounts
+- `guest_users` - Simplified guest user system
+- `transactions` - Dynamic transaction tables per merchant
 
-- **RESTful APIs**: Clean JSON responses
-- **JWT Authentication**: Standard Bearer token auth
-- **WebSocket Support**: Real-time features
-- **CORS Enabled**: Ready for frontend consumption
-- **Comprehensive Documentation**: OpenAPI/Swagger specs
+#### Key Features
+- **Dynamic Tables**: Each merchant gets their own transaction table
+- **Guest User System**: Simplified one-to-one guest user management
+- **Audit Trail**: Complete transaction history with timestamps
+- **Flexible Schema**: Supports various transaction types and payment methods
 
-## 🧪 Testing Credentials
+## 🚀 Deployment
 
-### 🔐 **Admin Dashboard**
-- **URL**: http://localhost:8001/admin
-- **Username**: `admin@graminstore.com`
-- **Password**: `admin123`
+### Backend (Heroku)
 
-### 🏪 **Sample Merchants** (All use password: `merchant123`)
-Run `python fake_data.py` to see the generated merchant credentials in the console output.
+1. **Create Heroku app**
+   ```bash
+   heroku create your-app-name
+   ```
 
-### 👤 **Sample Users** (All use password: `user123`)
-Run `python fake_data.py` to see the generated user credentials in the console output.
+2. **Add PostgreSQL addon**
+   ```bash
+   heroku addons:create heroku-postgresql:mini
+   ```
 
-### 📝 **API Testing Examples**
+3. **Set environment variables**
+   ```bash
+   heroku config:set SECRET_KEY=your-secret-key
+   heroku config:set ADMIN_EMAIL=admin@yourdomain.com
+   heroku config:set ADMIN_PASSWORD=your-admin-password
+   ```
 
-#### Login as Merchant
-```bash
-curl -X POST "http://localhost:8001/api/v1/auth/login/merchant" \
--H "Content-Type: application/json" \
--d '{"email": "MERCHANT_EMAIL_FROM_SCRIPT", "password": "merchant123"}'
-```
+4. **Deploy**
+   ```bash
+   git subtree push --prefix=backend heroku main
+   ```
 
-#### Login as User
-```bash
-curl -X POST "http://localhost:8001/api/v1/auth/login/user" \
--H "Content-Type: application/json" \
--d '{"email": "USER_EMAIL_FROM_SCRIPT", "password": "user123"}'
-```
+### Frontend (Vercel)
 
-#### Create User Transaction (Merchant Token Required)
-```bash
-curl -X POST "http://localhost:8001/api/v1/transactions/create" \
--H "Authorization: Bearer YOUR_MERCHANT_TOKEN" \
--H "Content-Type: application/json" \
--d '{
-  "user_id": 1,
-  "amount": 25.50,
-  "type": "payed",
-  "description": "Coffee and pastry",
-  "payment_method": "UPI"
-}'
-```
+1. **Connect GitHub repository to Vercel**
+2. **Set build settings**:
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+3. **Set environment variables**:
+   - `VITE_API_URL`: Your backend API URL
+4. **Deploy**
 
-#### Create Guest Transaction (Merchant Token Required)
-```bash
-curl -X POST "http://localhost:8001/api/v1/transactions/create" \
--H "Authorization: Bearer YOUR_MERCHANT_TOKEN" \
--H "Content-Type: application/json" \
--d '{
-  "amount": 15.75,
-  "type": "pay_later",
-  "description": "Lunch special",
-  "payment_method": null,
-  "is_guest_transaction": true
-}'
-```
+## 🔒 Security
 
-#### Get Guest Users (Merchant Token Required)
-```bash
-curl -X GET "http://localhost:8001/api/v1/transactions/guest-users" \
--H "Authorization: Bearer YOUR_MERCHANT_TOKEN"
-```
+- **JWT Authentication**: Secure token-based authentication
+- **Password Hashing**: bcrypt for password security
+- **CORS Protection**: Configured for specific domains
+- **Input Validation**: Pydantic schemas for request validation
+- **SQL Injection Protection**: SQLAlchemy ORM prevents SQL injection
 
-#### Get Merchant Dashboard (Merchant Token Required)
-```bash
-curl -X GET "http://localhost:8001/api/v1/dashboard/merchant" \
--H "Authorization: Bearer YOUR_MERCHANT_TOKEN"
-```
+## 🌐 Internationalization
 
-#### Get User Dashboard (User Token Required)
-```bash
-curl -X GET "http://localhost:8001/api/v1/dashboard/user" \
--H "Authorization: Bearer YOUR_USER_TOKEN"
-```
+The application supports multiple languages:
+- English (en)
+- Spanish (es)
+- French (fr)
+- Hindi (hi)
 
-### 🎯 **Test Data Information**
-The database is populated with:
-- **1 admin user** for system management
-- **5 merchants** with realistic Indian business data
-- **100 users** with Indian names and contact information  
-- **500+ user transactions** across all merchants
-- **250+ guest transactions** using simplified guest user system
-- **Dynamic transaction tables** for each merchant (`transaction_1`, `transaction_2`, etc.)
+Language files are located in `frontend/src/locales/`.
 
-All test accounts use consistent passwords for easy testing!
+## 📱 PWA Features
+
+- **Installable**: Add to home screen on mobile devices
+- **Offline Support**: Service worker for offline functionality
+- **Push Notifications**: Real-time updates (when WebSocket is available)
+- **Responsive Design**: Optimized for all screen sizes
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make changes and test thoroughly
-4. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Support
+## 👥 Team
+
+- **Backend Development**: FastAPI, PostgreSQL, SQLAlchemy
+- **Frontend Development**: React, TypeScript, Tailwind CSS
+- **DevOps**: Heroku, Vercel
+- **UI/UX**: Modern, responsive design with PWA capabilities
+
+## 📞 Support
 
 For support and questions:
-1. Check the API documentation at `/docs`
-2. Review this README
-3. Check the admin dashboard for data verification
-4. Create an issue in the repository
+- **Email**: support@graminstore.com
+- **Issues**: [GitHub Issues](https://github.com/ashupal86/GraminStore/issues)
+- **Documentation**: [API Docs](https://graminstore-backend-53e13181bd39.herokuapp.com/docs)
+
+## 🎯 Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics and reporting
+- [ ] Payment gateway integration
+- [ ] Multi-tenant support
+- [ ] Advanced inventory management
+- [ ] Customer loyalty programs
+- [ ] API rate limiting and monitoring
+- [ ] Advanced security features
 
 ---
 
-**Built with ❤️ for modern e-commerce solutions**
+**GraminStore** - Empowering merchants and consumers with modern transaction management solutions. 🚀
