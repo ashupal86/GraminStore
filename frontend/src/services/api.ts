@@ -373,6 +373,12 @@ class ApiService {
     });
   }
 
+  async getUserOrders(userId: number, token: string, limit: number = 50, offset: number = 0): Promise<any> {
+    return this.request<any>(`/api/v1/orders/user/${userId}?limit=${limit}&offset=${offset}`, {
+      headers: this.getAuthHeaders(token),
+    });
+  }
+
   async subscribePushNotifications(subscriptionData: any): Promise<any> {
     return this.request<any>('/api/v1/orders/push/subscribe', {
       method: 'POST',

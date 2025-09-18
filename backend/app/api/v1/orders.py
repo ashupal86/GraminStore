@@ -276,6 +276,72 @@ async def update_order_status(
         )
 
 
+@router.get("/user/{user_id}")
+async def get_user_orders(
+    user_id: int,
+    current_user: User = Depends(get_current_consumer),
+    db: Session = Depends(get_db),
+    limit: int = 50,
+    offset: int = 0
+):
+    """Get orders for a specific user"""
+    try:
+        # Verify the user is requesting their own orders
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+        
+        # Get orders from database where user_id matches
+        from app.services.order_service import get_merchant_orders
+        from app.models.order import Order
+        
+        orders = db.query(Order)\
+            .filter(Order.user_id == user_id)\
+            .order_by(Order.created_at.desc())\
+            .offset(offset)\
+            .limit(limit)\
+            .all()
+        
+        # Convert to API response format
+        orders_data = []
+        for order in orders:
+            order_data = {
+                "order_id": order.order_id,
+                "transaction_id": order.transaction_id,
+                "user_id": order.user_id,
+                "merchant_id": order.merchant_id,
+                "amount": order.total_amount,
+                "items": [
+                    {
+                        "id": item.item_id,
+                        "name": item.item_name,
+                        "quantity": item.quantity,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "category": item.item_category
+                    }
+                    for item in order.items
+                ],
+                "customer_name": order.customer_name,
+                "customer_phone": order.customer_phone,
+                "payment_method": order.payment_method,
+                "is_guest_order": order.is_guest_order,
+                "timestamp": order.created_at.isoformat(),
+                "status": order.status
+            }
+            orders_data.append(order_data)
+        
+        return {"orders": orders_data, "total": len(orders_data)}
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch user orders: {str(e)}"
+        )
+
+
 class PushSubscriptionRequest(BaseModel):
     endpoint: str
     keys: Dict[str, str]

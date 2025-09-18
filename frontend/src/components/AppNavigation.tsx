@@ -24,6 +24,7 @@ const AppNavigation = () => {
   const userNavItems = [
     { key: 'dashboard', path: '/dashboard/user', icon: '🏠', label: 'Dashboard' },
     { key: 'marketplace', path: '/marketplace', icon: '🛒', label: 'Marketplace' },
+    { key: 'my-orders', path: '/my-orders', icon: '📋', label: 'My Orders' },
     { key: 'settings', path: '/settings', icon: '⚙️', label: 'Settings' },
   ];
 

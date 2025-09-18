@@ -8,6 +8,7 @@ import MerchantDashboard from './pages/dashboards/MerchantDashboard';
 import EnhancedMerchantDashboard from './pages/dashboards/EnhancedMerchantDashboard';
 import WorkingCalculatorPage from './pages/WorkingCalculatorPage';
 import OrdersPage from './pages/OrdersPage';
+import UserOrdersPage from './pages/UserOrdersPage';
 import MarketplacePage from './pages/MarketplacePage';
 import SettingsPage from './pages/SettingsPage';
 import InventoryPage from './pages/InventoryPage';
@@ -71,6 +72,12 @@ function AppContent() {
           <ProtectedRoute requireUserType="merchant">
             <AppNavigation />
             <OrdersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/my-orders" element={
+          <ProtectedRoute requireUserType="user">
+            <AppNavigation />
+            <UserOrdersPage />
           </ProtectedRoute>
         } />
         <Route path="/marketplace" element={

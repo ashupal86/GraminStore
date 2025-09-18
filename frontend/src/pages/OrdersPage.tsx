@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { wsService } from '../services/websocket';
 import { pushNotificationService } from '../services/pushNotifications';
+import OrderNotificationModal from '../components/OrderNotificationModal';
 
 interface OrderItem {
   id: number;
@@ -47,6 +48,8 @@ const OrdersPage = () => {
   const [newOrderNotification, setNewOrderNotification] = useState<NewOrderNotification | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'processing' | 'completed' | 'cancelled'>('all');
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Load orders from API
   const loadOrders = async () => {
@@ -90,6 +93,36 @@ const OrdersPage = () => {
     } catch (error) {
       console.error('Failed to update order status:', error);
     }
+  };
+
+  // Handle order notification click
+  const handleOrderNotificationClick = (orderId: string) => {
+    const order = orders.find(o => o.order_id === orderId);
+    if (order) {
+      setSelectedOrder(order);
+      setIsModalOpen(true);
+    }
+  };
+
+  // Handle view order
+  const handleViewOrder = (orderId: string) => {
+    const order = orders.find(o => o.order_id === orderId);
+    if (order) {
+      setSelectedOrder(order);
+      setIsModalOpen(true);
+    }
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedOrder(null);
+  };
+
+  // Handle status update from modal
+  const handleStatusUpdate = async (orderId: string, status: string) => {
+    await updateOrderStatus(orderId, status);
+    // Keep modal open to show updated status
   };
 
   // Setup WebSocket connection for live updates
@@ -256,16 +289,19 @@ const OrdersPage = () => {
 
         {/* New Order Notification */}
         {newOrderNotification && (
-          <div className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-6 animate-pulse">
+          <div 
+            className="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-6 animate-pulse cursor-pointer hover:bg-green-100 dark:hover:bg-green-800 transition-colors"
+            onClick={() => handleOrderNotificationClick(newOrderNotification.order_id)}
+          >
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                   <span className="text-white text-sm font-bold">!</span>
                 </div>
               </div>
-              <div className="ml-3">
+              <div className="ml-3 flex-1">
                 <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                  New Order Received!
+                  New Order Received! Click to view details
                 </h3>
                 <p className="text-sm text-green-700 dark:text-green-300">
                   Order #{newOrderNotification.order_id} from {newOrderNotification.customer_name} - 
@@ -273,7 +309,10 @@ const OrdersPage = () => {
                 </p>
               </div>
               <button
-                onClick={() => setNewOrderNotification(null)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewOrderNotification(null);
+                }}
                 className="ml-auto text-green-400 hover:text-green-600"
               >
                 <span className="sr-only">Close</span>
@@ -432,7 +471,10 @@ const OrdersPage = () => {
                           Complete
                         </button>
                       )}
-                      <button className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200">
+                      <button 
+                        onClick={() => handleViewOrder(order.order_id)}
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                      >
                         View Details
                       </button>
                     </div>
@@ -443,6 +485,15 @@ const OrdersPage = () => {
           )}
         </div>
       </div>
+
+      {/* Order Details Modal */}
+      <OrderNotificationModal
+        order={selectedOrder}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onUpdateStatus={handleStatusUpdate}
+        onViewOrder={handleViewOrder}
+      />
     </div>
   );
 };
