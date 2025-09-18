@@ -40,7 +40,11 @@ class Settings(BaseSettings):
         "http://192.168.1.10:3000",
         "http://192.168.1.10:3001", 
         "http://192.168.1.10:5173",
-        "http://192.168.1.10:8009"
+        "http://192.168.1.10:8009",
+        "https://gramin-store.vercel.app",
+        "https://gramin-store.vercel.app/",
+        "https://graminstore.vercel.app",
+        "https://graminstore.vercel.app/"
     ]
     
     class Config:
