@@ -4,16 +4,16 @@ interface OrderNotificationModalProps {
   order: any;
   isOpen: boolean;
   onClose: () => void;
-  onUpdateStatus: (orderId: string, status: string) => void;
-  onViewOrder: (orderId: string) => void;
+  onUpdateStatus?: (orderId: string, status: string) => void;
+  onViewOrder?: (orderId: string) => void;
 }
 
 const OrderNotificationModal: React.FC<OrderNotificationModalProps> = ({
   order,
   isOpen,
   onClose,
-  onUpdateStatus,
-  onViewOrder
+  onUpdateStatus: _onUpdateStatus,
+  onViewOrder: _onViewOrder
 }) => {
   if (!isOpen || !order) return null;
 

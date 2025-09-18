@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react';
+// import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/indexedDB';
-import { apiService } from '../services/api';
+// import { apiService } from '../services/api';
 import { useSync } from '../hooks/useSync';
 import TransactionHistory from '../components/TransactionHistory';
 
@@ -31,7 +31,7 @@ interface TransactionData {
 }
 
 const EnhancedCalculatorPage = () => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const { merchant } = useAuth();
   const { syncStatus, performSync, forceSync } = useSync(merchant?.id);
   const [display, setDisplay] = useState('0');
@@ -50,9 +50,9 @@ const EnhancedCalculatorPage = () => {
     status: 'pending'
   });
   const [pendingAmount, setPendingAmount] = useState(0);
-  const [paidAmount, setPaidAmount] = useState(0);
+  // const [paidAmount, setPaidAmount] = useState(0);
   const [balance, setBalance] = useState(0);
-  const [showSyncStatus, setShowSyncStatus] = useState(false);
+  // const [showSyncStatus, setShowSyncStatus] = useState(false);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   // PWA Install Prompt
@@ -83,11 +83,11 @@ const EnhancedCalculatorPage = () => {
 
   // Load pending amounts for selected user
   useEffect(() => {
-    if (selectedUser && !selectedUser.isGuest) {
-      loadUserPendingAmount(selectedUser.id);
+    if (selectedUser && 'isGuest' in selectedUser && !selectedUser.isGuest) {
+      loadUserPendingAmount(selectedUser.id!);
     } else {
       setPendingAmount(0);
-      setPaidAmount(0);
+      // setPaidAmount(0);
       setBalance(0);
     }
   }, [selectedUser]);
@@ -107,7 +107,7 @@ const EnhancedCalculatorPage = () => {
     }
   };
 
-  const loadUserPendingAmount = async (userId: number) => {
+  const loadUserPendingAmount = async (_userId: number) => {
     try {
       // Load pending transactions for this user from IndexedDB
       const transactions = await db.getTransactions(merchant!.id);
@@ -125,7 +125,7 @@ const EnhancedCalculatorPage = () => {
         .reduce((sum, t) => sum + t.amount, 0);
 
       setPendingAmount(pending);
-      setPaidAmount(paid);
+      // setPaidAmount(paid);
       setBalance(paid - pending);
     } catch (error) {
       console.error('Error loading user pending amount:', error);
@@ -222,7 +222,10 @@ const EnhancedCalculatorPage = () => {
         status: transactionData.paymentType === 'instant' ? 'completed' : 'pending' as const,
       };
 
-      await db.addTransaction(transaction);
+      await db.addTransaction({
+        ...transaction,
+        status: transaction.status as 'pending' | 'completed' | 'cancelled'
+      });
 
       // Reset form
       setDisplay('0');
@@ -482,7 +485,7 @@ const EnhancedCalculatorPage = () => {
               <div className="flex-1">
                 <div className="font-semibold text-gray-900 dark:text-white">
                   {selectedUser.name}
-                  {selectedUser.isGuest && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full ml-2">Guest</span>}
+                  {'isGuest' in selectedUser && selectedUser.isGuest && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full ml-2">Guest</span>}
                 </div>
                 {'phone' in selectedUser && selectedUser.phone && (
                   <div className="text-sm text-gray-600 dark:text-gray-400">{selectedUser.phone}</div>

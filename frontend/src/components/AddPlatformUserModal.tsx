@@ -12,7 +12,7 @@ const AddPlatformUserModal: React.FC<AddPlatformUserModalProps> = ({
   isVisible,
   onClose,
   onUserAdded,
-  merchantId
+  merchantId: _merchantId
 }) => {
   const [phoneInput, setPhoneInput] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);

@@ -4,7 +4,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import UserDashboard from './pages/dashboards/UserDashboard';
-import MerchantDashboard from './pages/dashboards/MerchantDashboard';
+// import MerchantDashboard from './pages/dashboards/MerchantDashboard';
 import EnhancedMerchantDashboard from './pages/dashboards/EnhancedMerchantDashboard';
 import WorkingCalculatorPage from './pages/WorkingCalculatorPage';
 import OrdersPage from './pages/OrdersPage';

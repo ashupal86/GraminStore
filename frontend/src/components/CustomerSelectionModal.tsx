@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+// import { useTranslation } from 'react-i18next';
 import { db } from '../services/indexedDB';
 
 interface Customer {
@@ -33,7 +33,7 @@ const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
   onAddNewCustomer,
   merchantId
 }) => {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
