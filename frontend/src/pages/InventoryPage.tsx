@@ -162,9 +162,9 @@ const InventoryPage = () => {
       const pageHeight = pdf.internal.pageSize.getHeight();
       
       // Colors
-      const primaryColor = [41, 128, 185] as const; // Blue
-      const secondaryColor = [52, 73, 94] as const; // Dark gray
-      const lightGray = [236, 240, 241] as const;
+      const primaryColor: [number, number, number] = [41, 128, 185]; // Blue
+      const secondaryColor: [number, number, number] = [52, 73, 94]; // Dark gray
+      const lightGray: [number, number, number] = [236, 240, 241];
       
       // Header
       pdf.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -238,7 +238,7 @@ const InventoryPage = () => {
         
         // Status
         const status = item.inventory_item.current_quantity === 0 ? 'OUT' : 'LOW';
-        const statusColor = status === 'OUT' ? [231, 76, 60] : [230, 126, 34];
+        const statusColor: [number, number, number] = status === 'OUT' ? [231, 76, 60] : [230, 126, 34];
         pdf.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
         pdf.text(status, 200, yPosition);
         pdf.setTextColor(0, 0, 0);
