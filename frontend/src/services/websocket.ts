@@ -14,9 +14,10 @@ export class WebSocketService {
   }
 
   connect(token: string): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       try {
         const wsUrl = `${this.baseUrl.replace('http', 'ws')}/api/v1/ws/orders/${token}`;
+        console.log('Attempting to connect to WebSocket:', wsUrl);
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
@@ -38,6 +39,13 @@ export class WebSocketService {
           console.log('WebSocket disconnected:', event.code, event.reason);
           this.ws = null;
           
+          // Don't attempt to reconnect if it's a policy violation (CORS/security issue)
+          if (event.code === 1008) {
+            console.log('WebSocket connection blocked by security policy. WebSocket features will be disabled.');
+            resolve(); // Resolve instead of reject to prevent app crashes
+            return;
+          }
+          
           // Attempt to reconnect if not a normal closure
           if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
             this.scheduleReconnect(token);
@@ -46,11 +54,16 @@ export class WebSocketService {
 
         this.ws.onerror = (error) => {
           console.error('WebSocket error:', error);
-          reject(error);
+          // Don't reject on error - just log it and resolve to prevent app crashes
+          console.log('WebSocket connection failed. Real-time features will be disabled.');
+          resolve();
         };
 
       } catch (error) {
-        reject(error);
+        console.error('WebSocket connection error:', error);
+        // Don't reject on error - just log it and resolve to prevent app crashes
+        console.log('WebSocket connection failed. Real-time features will be disabled.');
+        resolve();
       }
     });
   }
@@ -145,6 +158,31 @@ export class WebSocketService {
 
   isConnected(): boolean {
     return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+  }
+
+  isWebSocketSupported(): boolean {
+    return typeof WebSocket !== 'undefined';
+  }
+
+  getConnectionStatus(): string {
+    if (!this.isWebSocketSupported()) {
+      return 'not-supported';
+    }
+    if (this.ws === null) {
+      return 'disconnected';
+    }
+    switch (this.ws.readyState) {
+      case WebSocket.CONNECTING:
+        return 'connecting';
+      case WebSocket.OPEN:
+        return 'connected';
+      case WebSocket.CLOSING:
+        return 'closing';
+      case WebSocket.CLOSED:
+        return 'closed';
+      default:
+        return 'unknown';
+    }
   }
 }
 
