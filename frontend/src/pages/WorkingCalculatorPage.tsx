@@ -254,7 +254,7 @@ const WorkingCalculatorPage = () => {
       }
 
       console.log('Sending transaction data:', transactionData);
-      const response = await apiService.createTransaction(token, transactionData);
+      await apiService.createTransaction(token, transactionData);
 
       // Also store locally for offline access
       if (customer.id) {
@@ -298,7 +298,6 @@ const WorkingCalculatorPage = () => {
       setPendingPaymentType(null);
       setShowCustomerModal(false);
 
-      const transactionTypeText = shouldBeGuestTransaction ? 'Guest transaction' : (paymentType === 'instant' ? 'Payment' : 'Pay Later transaction');
       // Success message removed
     } catch (error: any) {
       console.error('Error processing transaction:', error);

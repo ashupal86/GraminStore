@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db, Transaction } from '../services/indexedDB';
+import { db, type Transaction } from '../services/indexedDB';
 
 interface TransactionHistoryProps {
   merchantId: number;

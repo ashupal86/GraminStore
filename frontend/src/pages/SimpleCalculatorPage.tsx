@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/indexedDB';
 
 const SimpleCalculatorPage = () => {
-  const { t } = useTranslation();
   const { merchant } = useAuth();
   const [display, setDisplay] = useState('0');
   const [isNewCalculation, setIsNewCalculation] = useState(true);

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { syncService, SyncStatus } from '../services/syncService';
+import { syncService, type SyncStatus } from '../services/syncService';
 
 export const useSync = (merchantId?: number) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>({

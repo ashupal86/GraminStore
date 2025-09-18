@@ -7,8 +7,11 @@ export class WebSocketService {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private listeners: Map<string, ((data: any) => void)[]> = new Map();
+  private baseUrl: string;
 
-  constructor(private baseUrl: string) {}
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
 
   connect(token: string): Promise<void> {
     return new Promise((resolve, reject) => {

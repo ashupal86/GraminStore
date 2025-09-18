@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/api';
 import { wsService } from '../services/websocket';
-import { pushNotificationService } from '../services/pushNotifications';
 import OrderNotificationModal from '../components/OrderNotificationModal';
 
 interface OrderItem {
@@ -13,6 +12,7 @@ interface OrderItem {
   unit_price: number;
   total_price: number;
   category: string;
+  unit: string;
 }
 
 interface Order {
@@ -40,7 +40,7 @@ interface NewOrderNotification {
 
 const OrdersPage = () => {
   const { t } = useTranslation();
-  const { user, merchant, token } = useAuth();
+  const { merchant, token } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

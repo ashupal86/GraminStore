@@ -379,22 +379,22 @@ class ApiService {
     });
   }
 
-  async subscribePushNotifications(subscriptionData: any): Promise<any> {
+  async subscribePushNotifications(subscriptionData: any, token: string): Promise<any> {
     return this.request<any>('/api/v1/orders/push/subscribe', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(subscriptionData)
     });
   }
 
-  async unsubscribePushNotifications(): Promise<any> {
+  async unsubscribePushNotifications(token: string): Promise<any> {
     return this.request<any>('/api/v1/orders/push/unsubscribe', {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        'Authorization': `Bearer ${token}`
       }
     });
   }
