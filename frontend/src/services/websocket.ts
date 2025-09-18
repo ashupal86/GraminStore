@@ -150,7 +150,7 @@ export class WebSocketService {
 
 // Create singleton instance
 const getWebSocketService = () => {
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://192.168.1.10:8009';
+  const baseUrl = import.meta.env.VITE_API_URL || 'https://graminstore-backend-53e13181bd39.herokuapp.com';
   return new WebSocketService(baseUrl);
 };
 
