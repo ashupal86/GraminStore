@@ -44,7 +44,9 @@ class Settings(BaseSettings):
         "https://gramin-store.vercel.app",
         "https://gramin-store.vercel.app/",
         "https://graminstore.vercel.app",
-        "https://graminstore.vercel.app/"
+        "https://graminstore.vercel.app/",
+        "https://graminstore.devinit.in",
+        "https://graminstore.devinit.in/"
     ]
     
     class Config:
