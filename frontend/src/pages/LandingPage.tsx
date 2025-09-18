@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { api } from '../services/api';
+import { apiService } from '../services/api';
 
 const LandingPage = () => {
   const [feedback, setFeedback] = useState({
@@ -34,7 +34,7 @@ const LandingPage = () => {
     setPopulateStatus(null);
     
     try {
-      const response = await api.post('/admin/populate-database');
+      const response = await apiService.post('/admin/populate-database');
       
       if (response.data.success) {
         setPopulateStatus(`✅ Database populated successfully! Created ${response.data.data.merchants} merchants, ${response.data.data.users} users, and ${response.data.data.guest_users} guest users.`);
