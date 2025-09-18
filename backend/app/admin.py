@@ -45,10 +45,10 @@ class UserAdmin(ModelView, model=User):
 class GuestUserAdmin(ModelView, model=GuestUser):
     """Admin view for simplified GuestUser model"""
     column_list = [
-        GuestUser.id, GuestUser.merchant_id, GuestUser.transaction_id, GuestUser.timestamp
+        GuestUser.id, GuestUser.merchant_id, GuestUser.timestamp
     ]
-    column_searchable_list = [GuestUser.id, GuestUser.transaction_id]
-    column_sortable_list = [GuestUser.id, GuestUser.timestamp, GuestUser.transaction_id]
+    column_searchable_list = [GuestUser.id, GuestUser.merchant_id]
+    column_sortable_list = [GuestUser.id, GuestUser.timestamp, GuestUser.merchant_id]
     form_excluded_columns = [GuestUser.timestamp]
     
     name = "Guest User"

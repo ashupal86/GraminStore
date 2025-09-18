@@ -2,15 +2,20 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../services/indexedDB';
+import { apiService } from '../services/api';
 
 const SettingsPage = () => {
   const { t, i18n } = useTranslation();
-  const { user, merchant, userType } = useAuth();
+  const { user, merchant, userType, token } = useAuth();
   const [language, setLanguage] = useState(i18n.language);
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [notifications, setNotifications] = useState(true);
   const [autoSync, setAutoSync] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [detailedProfile, setDetailedProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [businessStats, setBusinessStats] = useState<any>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   const languages = [
     { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -20,7 +25,11 @@ const SettingsPage = () => {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+    loadDetailedProfile();
+    if (userType === 'merchant') {
+      loadBusinessStats();
+    }
+  }, [userType, token]);
 
   const loadSettings = async () => {
     if (userType === 'merchant' && merchant) {
@@ -42,6 +51,39 @@ const SettingsPage = () => {
       
       if (storedLang) setLanguage(storedLang);
       if (storedTheme) setTheme(storedTheme);
+    }
+  };
+
+  const loadDetailedProfile = async () => {
+    if (!token) return;
+    
+    setIsLoadingProfile(true);
+    try {
+      if (userType === 'merchant') {
+        const profile = await apiService.getMerchantProfile(token);
+        setDetailedProfile(profile);
+      } else if (userType === 'user') {
+        const profile = await apiService.getUserProfile(token);
+        setDetailedProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading detailed profile:', error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const loadBusinessStats = async () => {
+    if (!token || userType !== 'merchant') return;
+    
+    setIsLoadingStats(true);
+    try {
+      const stats = await apiService.getMerchantDashboard(token);
+      setBusinessStats(stats);
+    } catch (error) {
+      console.error('Error loading business stats:', error);
+    } finally {
+      setIsLoadingStats(false);
     }
   };
 
@@ -117,11 +159,20 @@ const SettingsPage = () => {
           <div className="p-6 space-y-8">
             {/* Profile Section */}
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                {t('settings.profile')}
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {t('settings.profile')}
+                </h2>
+                <button
+                  onClick={loadDetailedProfile}
+                  disabled={isLoadingProfile}
+                  className="text-sm bg-slate-600 hover:bg-slate-700 disabled:bg-gray-400 text-white px-3 py-1 rounded-md transition-colors duration-200 disabled:cursor-not-allowed"
+                >
+                  {isLoadingProfile ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
               <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 mb-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-slate-600 to-gray-600 rounded-full flex items-center justify-center">
                     <span className="text-white font-bold text-xl">
                       {displayName?.charAt(0).toUpperCase()}
@@ -135,8 +186,147 @@ const SettingsPage = () => {
                     </p>
                   </div>
                 </div>
+                
+                {isLoadingProfile ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto"></div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading profile details...</p>
+                  </div>
+                ) : detailedProfile ? (
+                  <div className="space-y-4">
+                    {/* Personal Information */}
+                    <div>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">Personal Information</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Full Name:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{detailedProfile.name}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{detailedProfile.email}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Phone:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{detailedProfile.phone}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Account ID:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">#{detailedProfile.id}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Account Type:</span>
+                          <p className="font-medium text-gray-900 dark:text-white capitalize">{detailedProfile.user_type || userType}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">Member Since:</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {new Date(detailedProfile.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Business Information (for merchants) */}
+                    {userType === 'merchant' && detailedProfile.business_name && (
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2">Business Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Business Name:</span>
+                            <p className="font-medium text-gray-900 dark:text-white">{detailedProfile.business_name}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Business Type:</span>
+                            <p className="font-medium text-gray-900 dark:text-white">{detailedProfile.business_type || 'Not specified'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Aadhaar Number:</span>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {detailedProfile.aadhar_number ? 
+                                `${detailedProfile.aadhar_number.slice(0, 4)}****${detailedProfile.aadhar_number.slice(-4)}` : 
+                                'Not provided'
+                              }
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600 dark:text-gray-400">Location:</span>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {[detailedProfile.city, detailedProfile.state, detailedProfile.country]
+                                .filter(Boolean)
+                                .join(', ') || 'Not specified'}
+                            </p>
+                          </div>
+                          {detailedProfile.zip_code && (
+                            <div>
+                              <span className="text-gray-600 dark:text-gray-400">ZIP Code:</span>
+                              <p className="font-medium text-gray-900 dark:text-white">{detailedProfile.zip_code}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Unable to load detailed profile</p>
+                  </div>
+                )}
               </div>
             </section>
+
+            {/* Business Analytics Section (for merchants) */}
+            {userType === 'merchant' && (
+              <section>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Business Analytics
+                  </h2>
+                  <button
+                    onClick={loadBusinessStats}
+                    disabled={isLoadingStats}
+                    className="text-sm bg-slate-600 hover:bg-slate-700 disabled:bg-gray-400 text-white px-3 py-1 rounded-md transition-colors duration-200 disabled:cursor-not-allowed"
+                  >
+                    {isLoadingStats ? 'Loading...' : 'Refresh'}
+                  </button>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                  {isLoadingStats ? (
+                    <div className="text-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading business stats...</p>
+                    </div>
+                  ) : businessStats ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-green-600">₹{businessStats.total_sales?.toLocaleString() || '0'}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Total Sales</div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-blue-600">{businessStats.total_transactions || '0'}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Total Transactions</div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-yellow-600">₹{businessStats.total_pending?.toLocaleString() || '0'}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Pending Payments</div>
+                      </div>
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-center">
+                        <div className="text-2xl font-bold text-purple-600">₹{businessStats.avg_transaction?.toLocaleString() || '0'}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">Avg Transaction</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Unable to load business statistics</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
 
             {/* Language Section */}
             <section>

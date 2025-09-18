@@ -110,6 +110,24 @@ const LoginPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-200 dark:border-gray-700">
+          {/* Test Credentials Help */}
+          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Test Credentials:</h3>
+            <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              {userType === 'merchant' ? (
+                <>
+                  <div><strong>Email:</strong> test@example.com</div>
+                  <div><strong>Password:</strong> Merchant123</div>
+                </>
+              ) : (
+                <>
+                  <div><strong>Email:</strong> john@example.com</div>
+                  <div><strong>Password:</strong> user123</div>
+                </>
+              )}
+            </div>
+          </div>
+          
           <form className="space-y-6" onSubmit={handleSubmit}>
             {errors.general && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-md text-sm">
@@ -135,7 +153,7 @@ const LoginPage = () => {
                       ? 'border-red-300 dark:border-red-600'
                       : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="Enter your email"
+                  placeholder={userType === 'merchant' ? 'test@example.com' : 'john@example.com'}
                 />
                 {errors.email && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.email}</p>
@@ -161,7 +179,7 @@ const LoginPage = () => {
                       ? 'border-red-300 dark:border-red-600'
                       : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="Enter your password"
+                  placeholder={userType === 'merchant' ? 'Merchant123' : 'user123'}
                 />
                 {errors.password && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password}</p>

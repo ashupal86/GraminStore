@@ -2,7 +2,7 @@
 Main API v1 router that includes all route modules
 """
 from fastapi import APIRouter
-from app.api.v1 import auth, transactions, dashboard, websocket
+from app.api.v1 import auth, transactions, dashboard, websocket, inventory, marketplace
 
 # Create main v1 router
 api_router = APIRouter(prefix="/api/v1")
@@ -12,6 +12,8 @@ api_router.include_router(auth.router)
 api_router.include_router(transactions.router)
 api_router.include_router(dashboard.router)
 api_router.include_router(websocket.router)
+api_router.include_router(inventory.router, prefix="/inventory", tags=["inventory"])
+api_router.include_router(marketplace.router, prefix="/marketplace", tags=["marketplace"])
 
 # Health check endpoint
 @api_router.get("/health")

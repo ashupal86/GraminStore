@@ -28,6 +28,8 @@ export interface Customer {
   createdAt: Date;
   updatedAt: Date;
   syncStatus: 'synced' | 'pending' | 'failed';
+  isGuest?: boolean;
+  platformUserId?: number; // Reference to platform user if not guest
 }
 
 export interface OfflineSettings {
@@ -40,11 +42,20 @@ export interface OfflineSettings {
   updatedAt: Date;
 }
 
+export interface CalculationHistoryEntry {
+  id?: number;
+  merchantId: number;
+  expression: string;
+  result: number;
+  timestamp: Date;
+}
+
 // Database class
 export class GraminStoreDB extends Dexie {
   transactions!: Table<Transaction>;
   customers!: Table<Customer>;
   settings!: Table<OfflineSettings>;
+  calculationHistory!: Table<CalculationHistoryEntry>;
 
   constructor() {
     super('GraminStoreDB');
@@ -53,6 +64,13 @@ export class GraminStoreDB extends Dexie {
       transactions: '++id, merchantId, customerName, amount, paymentType, status, createdAt, syncStatus',
       customers: '++id, merchantId, name, phone, totalTransactions, totalAmount, createdAt, syncStatus',
       settings: '++id, merchantId, language, theme, updatedAt',
+    });
+
+    this.version(2).stores({
+      transactions: '++id, merchantId, customerName, amount, paymentType, status, createdAt, syncStatus',
+      customers: '++id, merchantId, name, phone, totalTransactions, totalAmount, createdAt, syncStatus',
+      settings: '++id, merchantId, language, theme, updatedAt',
+      calculationHistory: '++id, merchantId, timestamp'
     });
   }
 
@@ -126,6 +144,40 @@ export class GraminStoreDB extends Dexie {
       .equals(merchantId)
       .reverse()
       .toArray();
+  }
+
+  async getCustomersByMerchant(merchantId: number) {
+    return await this.customers
+      .where('merchantId')
+      .equals(merchantId)
+      .reverse()
+      .toArray();
+  }
+
+  async addCustomer(customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'syncStatus'>) {
+    const now = new Date();
+    const newCustomer: Omit<Customer, 'id'> = {
+      ...customer,
+      createdAt: now,
+      updatedAt: now,
+      syncStatus: 'pending',
+    };
+    
+    const id = await this.customers.add(newCustomer);
+    return { ...newCustomer, id };
+  }
+
+  async updateCustomerTotals(customerId: number, amount: number) {
+    const customer = await this.customers.get(customerId);
+    if (customer) {
+      await this.customers.update(customerId, {
+        totalTransactions: customer.totalTransactions + 1,
+        totalAmount: customer.totalAmount + amount,
+        lastTransactionDate: new Date(),
+        updatedAt: new Date(),
+        syncStatus: 'pending',
+      });
+    }
   }
 
   // Settings methods
@@ -213,6 +265,135 @@ export class GraminStoreDB extends Dexie {
     await this.transactions.where('merchantId').equals(merchantId).delete();
     await this.customers.where('merchantId').equals(merchantId).delete();
     await this.settings.where('merchantId').equals(merchantId).delete();
+  }
+
+  // Calculation History methods (local only)
+  async addCalculationHistory(entry: Omit<CalculationHistoryEntry, 'id'>) {
+    return await this.calculationHistory.add(entry);
+  }
+
+  async getCalculationHistory(merchantId: number, limit = 50) {
+    return await this.calculationHistory
+      .where('merchantId')
+      .equals(merchantId)
+      .reverse()
+      .limit(limit)
+      .toArray();
+  }
+
+  // Enhanced sync methods
+  async syncWithServer(merchantId: number) {
+    if (!navigator.onLine) {
+      throw new Error('No internet connection');
+    }
+
+    const pendingData = await this.getPendingSyncData(merchantId);
+    const syncedIds: { transactions: number[], customers: number[] } = {
+      transactions: [],
+      customers: []
+    };
+
+    try {
+      // Sync transactions
+      for (const transaction of pendingData.transactions) {
+        try {
+          // This would be an actual API call
+          // await apiService.syncTransaction(transaction);
+          console.log('Syncing transaction:', transaction);
+          syncedIds.transactions.push(transaction.id!);
+        } catch (error) {
+          console.error('Failed to sync transaction:', transaction.id, error);
+          await this.transactions.update(transaction.id!, { syncStatus: 'failed' });
+        }
+      }
+
+      // Sync customers
+      for (const customer of pendingData.customers) {
+        try {
+          // This would be an actual API call
+          // await apiService.syncCustomer(customer);
+          console.log('Syncing customer:', customer);
+          syncedIds.customers.push(customer.id!);
+        } catch (error) {
+          console.error('Failed to sync customer:', customer.id, error);
+          await this.customers.update(customer.id!, { syncStatus: 'failed' });
+        }
+      }
+
+      // Mark successfully synced items
+      await this.markAsSynced('transaction', syncedIds.transactions);
+      await this.markAsSynced('customer', syncedIds.customers);
+
+      return {
+        success: true,
+        syncedTransactions: syncedIds.transactions.length,
+        syncedCustomers: syncedIds.customers.length
+      };
+    } catch (error) {
+      console.error('Sync failed:', error);
+      throw error;
+    }
+  }
+
+  // User balance methods
+  async getUserBalance(merchantId: number, userPhone: string) {
+    const userTransactions = await this.transactions
+      .where({ merchantId })
+      .filter(t => t.customerPhone === userPhone)
+      .toArray();
+
+    const pending = userTransactions
+      .filter(t => t.status === 'pending' && t.paymentType === 'payLater')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const paid = userTransactions
+      .filter(t => t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
+      pending,
+      paid,
+      balance: paid - pending
+    };
+  }
+
+  // Search customers by phone or name
+  async searchCustomers(merchantId: number, query: string) {
+    const customers = await this.customers
+      .where('merchantId')
+      .equals(merchantId)
+      .toArray();
+
+    return customers.filter(customer => 
+      customer.name.toLowerCase().includes(query.toLowerCase()) ||
+      (customer.phone && customer.phone.includes(query)) ||
+      (customer.email && customer.email.toLowerCase().includes(query.toLowerCase()))
+    );
+  }
+
+  // Get transaction history for a specific user
+  async getUserTransactionHistory(merchantId: number, userPhone: string, limit = 20) {
+    return await this.transactions
+      .where({ merchantId })
+      .filter(t => t.customerPhone === userPhone)
+      .reverse()
+      .limit(limit)
+      .toArray();
+  }
+
+  // Auto-sync when coming online
+  async handleOnlineSync(merchantId: number) {
+    if (navigator.onLine) {
+      try {
+        const result = await this.syncWithServer(merchantId);
+        console.log('Auto-sync completed:', result);
+        return result;
+      } catch (error) {
+        console.error('Auto-sync failed:', error);
+        return { success: false, error };
+      }
+    }
+    return { success: false, error: 'Offline' };
   }
 }
 

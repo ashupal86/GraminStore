@@ -70,8 +70,7 @@ const CalculatorPage = () => {
   };
 
   const handleAddTransaction = async () => {
-    if (!merchant || !amount || !customerName) {
-      alert('Please fill in all required fields');
+    if (!merchant || !display || !customerName) {
       return;
     }
 
@@ -94,14 +93,10 @@ const CalculatorPage = () => {
       setDisplay('0');
       setIsNewCalculation(true);
 
-      alert(
-        paymentType === 'instant'
-          ? `Transaction of ₹${amount} completed successfully!`
-          : `Pay later transaction of ₹${amount} recorded!`
-      );
+      // Success: no alert shown
     } catch (error) {
       console.error('Error adding transaction:', error);
-      alert('Error saving transaction. Please try again.');
+      // Error: no alert shown
     }
   };
 

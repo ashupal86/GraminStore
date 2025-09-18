@@ -2,7 +2,7 @@
 Transaction model with dynamic table creation per merchant
 """
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Numeric, DateTime, Enum, Text, Table, MetaData, create_engine
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, Enum, Text, Table, MetaData, create_engine, Boolean
 from sqlalchemy.orm import Session
 from app.models.database import engine, metadata
 import enum
@@ -10,8 +10,14 @@ import enum
 
 class TransactionType(str, enum.Enum):
     """Transaction types enum"""
-    PAYED = "payed"
-    PAY_LATER = "pay_later"
+    PAYED = "PAYED"
+    PAY_LATER = "PAY_LATER"
+
+
+class PaymentMethod(str, enum.Enum):
+    """Payment method enum"""
+    ONLINE = "online"
+    CASH = "cash"
 
 
 def create_merchant_transaction_table(merchant_id: int):
@@ -30,14 +36,13 @@ def create_merchant_transaction_table(merchant_id: int):
         table_name,
         metadata,
         Column('transaction_id', Integer, primary_key=True, autoincrement=True),
-        Column('user_id', Integer, nullable=True),  # Can be null for guest users
-        Column('guest_user_id', Integer, nullable=True),  # For guest users
+        Column('user_id', Integer, nullable=True),  # Used by both user and guest
         Column('timestamp', DateTime, default=datetime.utcnow, nullable=False),
         Column('amount', Numeric(10, 2), nullable=False),
         Column('type', Enum(TransactionType), nullable=False),
         Column('description', Text, nullable=True),
         Column('payment_method', String(50), nullable=True),
-        Column('reference_number', String(100), nullable=True),
+        Column('guest_user_id', Integer, nullable=True),
         extend_existing=True
     )
     
@@ -85,38 +90,60 @@ def get_merchant_transaction_table(merchant_id: int):
     return metadata.tables.get(table_name)
 
 
-def create_guest_user_for_transaction(
-    merchant_id: int,
-    transaction_id: int
-):
-    """Create a simplified guest user for a specific transaction"""
+def get_or_create_guest_user(merchant_id: int):
+    """Get existing guest user for merchant or create one if doesn't exist"""
     from app.models.guest_user import GuestUser
     
     with Session(engine) as session:
-        guest_user = GuestUser(
-            merchant_id=merchant_id,
-            transaction_id=transaction_id
-        )
+        # Try to get existing guest user for this merchant
+        guest_user = session.query(GuestUser).filter(
+            GuestUser.merchant_id == merchant_id
+        ).first()
         
+        if guest_user:
+            return guest_user.id
+        
+        # Create new guest user if none exists
+        guest_user = GuestUser(merchant_id=merchant_id, transaction_id=0)  # Use 0 as placeholder
         session.add(guest_user)
         session.commit()
         session.refresh(guest_user)
         return guest_user.id
 
 
+def _map_transaction_type_to_db(transaction_type: TransactionType) -> str:
+    """Map frontend transaction type values to database values"""
+    # The enum values are now the database values, so just return them
+    return transaction_type.value
+
+def _map_transaction_type_from_db(db_type: str) -> str:
+    """Map database transaction type values to frontend values"""
+    mapping = {
+        "PAYED": "payed",
+        "PAY_LATER": "pending"
+    }
+    return mapping.get(db_type, "payed")
+
+def _map_frontend_to_enum(frontend_type: str) -> TransactionType:
+    """Map frontend transaction type values to enum values"""
+    mapping = {
+        "payed": TransactionType.PAYED,
+        "pending": TransactionType.PAY_LATER
+    }
+    return mapping.get(frontend_type, TransactionType.PAYED)
+
+
 def insert_transaction(
     merchant_id: int,
     user_id: int = None,
-    guest_user_id: int = None,
     amount: float = 0.0,
     transaction_type: TransactionType = TransactionType.PAYED,
     description: str = None,
-    payment_method: str = None,
-    reference_number: str = None,
+    payment_method: PaymentMethod = None,
     timestamp: datetime = None,
     is_guest_transaction: bool = False
 ):
-    """Insert a transaction into merchant-specific table and create guest user if needed"""
+    """Insert a transaction into merchant-specific table"""
     table = get_merchant_transaction_table(merchant_id)
     if table is None:
         table = create_merchant_transaction_table(merchant_id)
@@ -125,40 +152,26 @@ def insert_transaction(
     if timestamp is None:
         timestamp = datetime.utcnow()
     
+    # For guest transactions, get or create guest user
+    if is_guest_transaction:
+        user_id = get_or_create_guest_user(merchant_id)
+    
     with Session(engine) as session:
-        # Insert transaction first to get transaction_id
+        # Insert transaction
         insert_stmt = table.insert().values(
             user_id=user_id,
-            guest_user_id=None,  # Will be updated after guest user creation
             timestamp=timestamp,
             amount=amount,
-            type=transaction_type,
+            type=_map_transaction_type_to_db(transaction_type),
             description=description,
             payment_method=payment_method,
-            reference_number=reference_number
+            guest_user_id=user_id if is_guest_transaction else None
         )
         result = session.execute(insert_stmt)
         transaction_id = result.inserted_primary_key[0]
         session.commit()
         
-        # If this is a guest transaction, create new guest user
-        if is_guest_transaction and user_id is None:
-            new_guest_user_id = create_guest_user_for_transaction(
-                merchant_id=merchant_id,
-                transaction_id=transaction_id
-            )
-            
-            # Update transaction with the new guest_user_id
-            update_stmt = table.update().where(
-                table.c.transaction_id == transaction_id
-            ).values(guest_user_id=new_guest_user_id)
-            
-            session.execute(update_stmt)
-            session.commit()
-            
-            return transaction_id, new_guest_user_id
-        
-        return transaction_id, guest_user_id
+        return transaction_id, user_id
 
 
 def get_merchant_transactions(merchant_id: int, limit: int = 100, offset: int = 0):
@@ -169,6 +182,22 @@ def get_merchant_transactions(merchant_id: int, limit: int = 100, offset: int = 
     
     with Session(engine) as session:
         select_stmt = table.select().order_by(table.c.timestamp.desc()).limit(limit).offset(offset)
+        result = session.execute(select_stmt)
+        return result.fetchall()
+
+def get_merchant_transactions_by_period(merchant_id: int, days: int = 30, limit: int = 100, offset: int = 0):
+    """Get transactions for a specific merchant within a time period"""
+    table = get_merchant_transaction_table(merchant_id)
+    if table is None:
+        return []
+    
+    from datetime import datetime, timedelta
+    cutoff_date = datetime.now() - timedelta(days=days)
+    
+    with Session(engine) as session:
+        select_stmt = table.select().where(
+            table.c.timestamp >= cutoff_date
+        ).order_by(table.c.timestamp.desc()).limit(limit).offset(offset)
         result = session.execute(select_stmt)
         return result.fetchall()
 
@@ -226,7 +255,7 @@ def get_merchant_transaction_analytics(merchant_id: int, days: int = 30):
         }
 
 
-def get_guest_user_transaction_analytics(merchant_id: int, guest_user_id: int):
+def get_guest_user_transaction_analytics(merchant_id: int, user_id: int):
     """Get transaction analytics for a specific guest user"""
     table = get_merchant_transaction_table(merchant_id)
     if table is None:
@@ -241,8 +270,8 @@ def get_guest_user_transaction_analytics(merchant_id: int, guest_user_id: int):
     from sqlalchemy import func, select
     
     with Session(engine) as session:
-        # Filter for this guest user
-        guest_filter = table.c.guest_user_id == guest_user_id
+        # Filter for this guest user - now using user_id and guest_user_id
+        guest_filter = (table.c.user_id == user_id) & (table.c.guest_user_id.isnot(None))
         
         # Total transactions count
         total_transactions = session.execute(
@@ -278,11 +307,13 @@ def get_guest_user_transaction_analytics(merchant_id: int, guest_user_id: int):
         for txn in recent_transactions_result:
             recent_transactions.append({
                 "transaction_id": txn[0],
-                "timestamp": txn[3].isoformat() if txn[3] else None,
-                "amount": float(txn[4]),
-                "type": txn[5],
-                "description": txn[6],
-                "reference_number": txn[8]
+                "user_id": txn[1],
+                "timestamp": txn[2].isoformat() if txn[2] else None,
+                "amount": float(txn[3]),
+                "type": txn[4],
+                "description": txn[5],
+                "payment_method": txn[6],
+                "guest_user": txn[7]
             })
         
         return {

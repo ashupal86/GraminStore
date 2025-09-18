@@ -136,12 +136,11 @@ def create_fake_transactions(merchants: list, users: list, guest_users: list, co
             insert_transaction(
                 merchant_id=merchant.id,
                 user_id=user_id,
-                guest_user_id=guest_user_id,
                 amount=amount,
                 transaction_type=transaction_type,
                 description=description,
                 payment_method=payment_method,
-                reference_number=f"TXN_{merchant.id}_{fake.uuid4()[:8].upper()}"
+                is_guest_transaction=(guest_user_id is not None)
             )
 
 

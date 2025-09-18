@@ -1,8 +1,9 @@
 """
 Authentication routes for user and merchant login/registration
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from typing import List
 from app.models.database import get_db
 from app.models.merchant import Merchant
 from app.models.user import User
@@ -249,3 +250,55 @@ async def get_user_profile(
         user_type="user",
         created_at=current_user.created_at.isoformat()
     )
+
+
+
+@router.get("/search/users-by-phone", response_model=List[dict])
+async def search_users_by_phone(
+    phone: str = Query(..., min_length=5, description="Partial phone number to search"),
+    limit: int = Query(10, ge=1, le=50, description="Maximum number of results to return"),
+    db: Session = Depends(get_db)
+):
+    """Search for platform users by partial phone number.
+    Returns a list of matching users."""
+    # Remove any non-digit characters for searching
+    clean_phone = ''.join(filter(str.isdigit, phone))
+    
+    if len(clean_phone) < 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Phone number must be at least 5 digits"
+        )
+    
+    # Search for users whose phone contains the search digits
+    users = db.query(User).filter(
+        User.phone.like(f"%{clean_phone}%")
+    ).limit(limit).all()
+    
+    return [
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "phone": user.phone
+        }
+        for user in users
+    ]
+
+@router.get("/lookup/user-by-phone", response_model=dict)
+async def lookup_user_by_phone(
+    phone: str = Query(..., min_length=5, description="User phone number to lookup"),
+    db: Session = Depends(get_db)
+):
+    """Lookup a platform user by exact phone number and return basic profile info.
+    Returns 404 if not found."""
+    user = db.query(User).filter(User.phone == phone).first()
+    if not user:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    return {
+      "id": user.id,
+      "name": user.name,
+      "email": user.email,
+      "phone": user.phone
+    }

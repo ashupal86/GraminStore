@@ -5,10 +5,12 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import UserDashboard from './pages/dashboards/UserDashboard';
 import MerchantDashboard from './pages/dashboards/MerchantDashboard';
-import CalculatorPage from './pages/CalculatorPage';
+import EnhancedMerchantDashboard from './pages/dashboards/EnhancedMerchantDashboard';
+import WorkingCalculatorPage from './pages/WorkingCalculatorPage';
 import OrdersPage from './pages/OrdersPage';
 import MarketplacePage from './pages/MarketplacePage';
 import SettingsPage from './pages/SettingsPage';
+import InventoryPage from './pages/InventoryPage';
 import Navbar from './components/Navbar';
 import AppNavigation from './components/AppNavigation';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -44,13 +46,25 @@ function AppContent() {
         <Route path="/dashboard/merchant" element={
           <ProtectedRoute requireUserType="merchant">
             <AppNavigation />
-            <MerchantDashboard />
+            <WorkingCalculatorPage />
           </ProtectedRoute>
         } />
         <Route path="/calculator" element={
           <ProtectedRoute requireUserType="merchant">
             <AppNavigation />
-            <CalculatorPage />
+            <WorkingCalculatorPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute requireUserType="merchant">
+            <AppNavigation />
+            <EnhancedMerchantDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/inventory" element={
+          <ProtectedRoute requireUserType="merchant">
+            <AppNavigation />
+            <InventoryPage />
           </ProtectedRoute>
         } />
         <Route path="/orders" element={

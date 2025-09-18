@@ -24,7 +24,10 @@ class Merchant(BaseModel):
     business_type = Column(String(100), nullable=True)
     
     # Relationships
-    guest_users = relationship("GuestUser", back_populates="merchant", cascade="all, delete-orphan")
+    guest_users = relationship("GuestUser", back_populates="merchant", cascade="all, delete-orphan", lazy="select")
+    inventory_items = relationship("InventoryItem", back_populates="merchant", cascade="all, delete-orphan", lazy="select")
+    purchase_list_items = relationship("PurchaseListItem", back_populates="merchant", cascade="all, delete-orphan", lazy="select")
+    inventory_transactions = relationship("InventoryTransaction", back_populates="merchant", cascade="all, delete-orphan", lazy="select")
     
     def __repr__(self):
         return f"<Merchant(id={self.id}, name='{self.name}', email='{self.email}')>"

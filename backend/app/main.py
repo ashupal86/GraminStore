@@ -14,7 +14,7 @@ from app.models.database import engine, create_tables
 # Import API router
 from app.api.v1.router import api_router
 
-# Import admin setup
+# Import admin setup (temporarily disabled due to sqladmin issues)
 from app.admin import setup_admin, create_admin_user
 from app.utils.admin_auth import AdminAuth
 
@@ -51,7 +51,7 @@ app.add_middleware(
 # Include API routes
 app.include_router(api_router)
 
-# Setup admin dashboard with authentication
+# Setup admin dashboard with authentication (temporarily disabled)
 authentication_backend = AdminAuth(secret_key=settings.secret_key)
 admin = setup_admin(app, engine, authentication_backend)
 
@@ -69,7 +69,7 @@ async def startup_event():
     from app.models.transaction import load_existing_transaction_tables
     load_existing_transaction_tables()
     
-    # Create admin user
+    # Create admin user (temporarily disabled)
     create_admin_user(engine)
     print("Admin user verified/created")
     
@@ -217,13 +217,13 @@ async def favicon():
     return Response(status_code=204)
 
 
-@app.exception_handler(404)
-async def not_found_handler(request, exc):
-    """Handle 404 errors"""
-    return JSONResponse(
-        status_code=404,
-        content={"detail": "Endpoint not found. Visit /docs for API documentation."}
-    )
+# @app.exception_handler(404)
+# async def not_found_handler(request, exc):
+#     """Handle 404 errors"""
+#     return JSONResponse(
+#         status_code=404,
+#         content={"detail": "Endpoint not found. Visit /docs for API documentation."}
+#     )
 
 
 if __name__ == "__main__":

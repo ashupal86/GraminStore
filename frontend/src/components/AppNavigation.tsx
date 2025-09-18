@@ -14,16 +14,17 @@ const AppNavigation = () => {
   }
 
   const merchantNavItems = [
-    { key: 'dashboard', path: '/dashboard/merchant', icon: '📊' },
-    { key: 'calculator', path: '/calculator', icon: '🧮' },
-    { key: 'orders', path: '/orders', icon: '📋' },
-    { key: 'settings', path: '/settings', icon: '⚙️' },
+    { key: 'calculator', path: '/dashboard/merchant', icon: '🧮', label: 'Calculator' },
+    { key: 'analytics', path: '/analytics', icon: '📊', label: 'Dashboard' },
+    { key: 'inventory', path: '/inventory', icon: '📦', label: 'Inventory' },
+    { key: 'orders', path: '/orders', icon: '📋', label: 'Orders' },
+    { key: 'settings', path: '/settings', icon: '⚙️', label: 'Settings' },
   ];
 
   const userNavItems = [
-    { key: 'dashboard', path: '/dashboard/user', icon: '🏠' },
-    { key: 'marketplace', path: '/marketplace', icon: '🛒' },
-    { key: 'settings', path: '/settings', icon: '⚙️' },
+    { key: 'dashboard', path: '/dashboard/user', icon: '🏠', label: 'Dashboard' },
+    { key: 'marketplace', path: '/marketplace', icon: '🛒', label: 'Marketplace' },
+    { key: 'settings', path: '/settings', icon: '⚙️', label: 'Settings' },
   ];
 
   const navItems = userType === 'merchant' ? merchantNavItems : userNavItems;
@@ -54,7 +55,7 @@ const AppNavigation = () => {
                 }`}
               >
                 <span className="text-lg">{item.icon}</span>
-                <span>{t(`nav.${item.key}`)}</span>
+                <span>{item.label || t(`nav.${item.key}`)}</span>
               </Link>
             ))}
           </div>
@@ -105,7 +106,7 @@ const AppNavigation = () => {
                   }`}
                 >
                   <span className="text-lg">{item.icon}</span>
-                  <span>{t(`nav.${item.key}`)}</span>
+                  <span>{item.label || t(`nav.${item.key}`)}</span>
                 </Link>
               ))}
               

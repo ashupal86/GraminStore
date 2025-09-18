@@ -76,7 +76,42 @@ def create_admin_user():
         print(f"   ✅ Admin created: {admin.email} / admin123")
         return admin
 
-def create_fake_merchants(count=5):
+def create_test_merchant():
+    """Create a test merchant for easy login"""
+    print("🧪 Creating test merchant...")
+    
+    with SessionLocal() as session:
+        # Check if test merchant already exists
+        existing_merchant = session.query(Merchant).filter(
+            Merchant.email == "test@example.com"
+        ).first()
+        
+        if existing_merchant:
+            print("   ✅ Test merchant already exists")
+            return existing_merchant
+        
+        test_merchant = Merchant(
+            name="Test Merchant",
+            email="test@example.com",
+            phone="+91-9999999999",
+            password_hash=get_password_hash("Merchant123"),
+            aadhar_number="999999999999",
+            business_name="Test Store",
+            city="Mumbai",
+            state="Maharashtra",
+            zip_code="400001",
+            country="India",
+            business_type="retail"
+        )
+        
+        session.add(test_merchant)
+        session.commit()
+        session.refresh(test_merchant)
+        
+        print(f"   ✅ Test merchant created: {test_merchant.email} / Merchant123")
+        return test_merchant
+
+def create_fake_merchants(count=2):
     """Create fake merchants with realistic Indian business data"""
     print(f"🏪 Creating {count} fake merchants...")
     
@@ -128,7 +163,7 @@ def create_fake_merchants(count=5):
     
     return merchant_ids
 
-def create_fake_users(count=100):
+def create_fake_users(count=4):
     """Create fake users with realistic Indian data"""
     print(f"👥 Creating {count} fake users...")
     
@@ -154,7 +189,7 @@ def create_fake_users(count=100):
     print(f"   ✅ Created {len(user_ids)} users total")
     return user_ids
 
-def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merchant=100, guest_transactions_per_merchant=50):
+def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merchant=50, guest_transactions_per_merchant=50):
     """Create fake transactions using the simplified guest user system"""
     print(f"💳 Creating fake transactions...")
     
@@ -162,10 +197,14 @@ def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merch
         "Coffee and pastry", "Lunch special", "Grocery shopping", "Snacks", 
         "Tea and biscuits", "Breakfast combo", "Dinner", "Fresh vegetables",
         "Dairy products", "Beverages", "Sweets and treats", "Stationery items",
-        "Phone recharge", "Medicine", "Cooking oil", "Rice and pulses"
+        "Phone recharge", "Medicine", "Cooking oil", "Rice and pulses",
+        "Bread and butter", "Milk and eggs", "Fruits", "Vegetables",
+        "Spices and condiments", "Cleaning supplies", "Personal care items",
+        "School supplies", "Office supplies", "Electronics accessories",
+        "Clothing items", "Footwear", "Home decor", "Kitchen utensils"
     ]
     
-    payment_methods = ["Cash", "UPI", "Card", "Digital Wallet", "Bank Transfer"]
+    payment_methods = ["cash", "online"]
     
     # Get fresh merchant data from database to avoid detached instance errors
     with SessionLocal() as session:
@@ -181,9 +220,11 @@ def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merch
                     break
                     
                 user_id = random.choice(user_ids)
-                amount = round(random.uniform(20.0, 1200.0), 2)
+                # More realistic amount distribution
+                amount = round(random.uniform(50.0, 2000.0), 2)
                 transaction_type = random.choice([TransactionType.PAYED, TransactionType.PAY_LATER])
-                description = random.choice(descriptions)
+                # Make description optional (30% chance of no description)
+                description = random.choice(descriptions) if random.random() > 0.3 else None
                 payment_method = random.choice(payment_methods) if transaction_type == TransactionType.PAYED else None
                 
                 # Random timestamp within last 90 days
@@ -205,7 +246,6 @@ def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merch
                         transaction_type=transaction_type,
                         description=description,
                         payment_method=payment_method,
-                        reference_number=f"USR_{merchant.id}_{str(fake.uuid4())[:8].upper()}",
                         timestamp=timestamp,
                         is_guest_transaction=False
                     )
@@ -216,12 +256,11 @@ def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merch
             # 2. Create guest transactions using simplified system
             print(f"    Creating {guest_transactions_per_merchant} guest transactions...")
             for txn_num in range(guest_transactions_per_merchant):
-                # Guest transactions tend to be smaller amounts and more pay-later
-                amount = round(random.uniform(10.0, 800.0), 2)
-                transaction_type = random.choice([
-                    TransactionType.PAYED, TransactionType.PAYED, TransactionType.PAY_LATER
-                ])  # 2:1 ratio favoring paid transactions
-                description = random.choice(descriptions)
+                # Guest transactions tend to be smaller amounts and are always immediate payment
+                amount = round(random.uniform(25.0, 500.0), 2)
+                transaction_type = TransactionType.PAYED  # Guest users can only pay immediately
+                # Make description optional (40% chance of no description for guests)
+                description = random.choice(descriptions) if random.random() > 0.4 else None
                 payment_method = random.choice(payment_methods) if transaction_type == TransactionType.PAYED else None
                 
                 # Random timestamp within last 60 days (guests are more recent)
@@ -243,7 +282,6 @@ def create_fake_transactions(merchant_ids, user_ids, user_transactions_per_merch
                         transaction_type=transaction_type,
                         description=description,
                         payment_method=payment_method,
-                        reference_number=f"GST_{merchant.id}_{str(fake.uuid4())[:8].upper()}",
                         timestamp=timestamp,
                         is_guest_transaction=True  # This will auto-create guest user
                     )
@@ -312,9 +350,20 @@ def print_test_credentials():
             print(f"   Password: admin123")
             print()
         
-        # Get first few merchant credentials
+        # Get test merchant credentials
+        test_merchant = session.query(Merchant).filter(
+            Merchant.email == "test@example.com"
+        ).first()
+        
+        if test_merchant:
+            print(f"🧪 Test Merchant:")
+            print(f"   Email: {test_merchant.email}")
+            print(f"   Password: Merchant123")
+            print()
+        
+        # Get first few other merchant credentials
         merchants = session.query(Merchant).filter(
-            Merchant.email != "admin@graminstore.com"
+            Merchant.email.notin_(["admin@graminstore.com", "test@example.com"])
         ).limit(3).all()
         
         print(f"🏪 Merchants (first 3):")
@@ -347,18 +396,21 @@ def main():
     # Create admin user
     admin = create_admin_user()
     
+    # Create test merchant for easy login
+    test_merchant = create_test_merchant()
+    
     # Create fake merchants
-    merchant_ids = create_fake_merchants(count=5)
+    merchant_ids = create_fake_merchants(count=2)
     
     # Create fake users
-    user_ids = create_fake_users(count=100)
+    user_ids = create_fake_users(count=4)
     
     # Create fake transactions
     create_fake_transactions(
         merchant_ids,
         user_ids,
-        100,  # user_transactions_per_merchant
-        50    # guest_transactions_per_merchant
+        50,  # user_transactions_per_merchant
+        50   # guest_transactions_per_merchant
     )
     
     # Verify data counts

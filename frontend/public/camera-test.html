@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Test - GraminStore</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        video { max-width: 100%; height: auto; border: 2px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📷 Camera Permission Test</h1>
+        <p>This page helps test camera access for the GraminStore inventory scanner.</p>
+        
+        <div id="status" class="status warning">
+            Click "Test Camera" to check if your browser can access the camera.
+        </div>
+        
+        <div>
+            <button onclick="testCamera()" id="testBtn">Test Camera</button>
+            <button onclick="stopCamera()" id="stopBtn" disabled>Stop Camera</button>
+        </div>
+        
+        <div id="videoContainer" style="margin-top: 20px; display: none;">
+            <h3>Camera Preview:</h3>
+            <video id="video" autoplay muted playsinline></video>
+        </div>
+        
+        <div id="instructions" style="margin-top: 20px;">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click "Test Camera" button above</li>
+                <li>Allow camera access when prompted by your browser</li>
+                <li>If successful, you should see a video preview</li>
+                <li>If it fails, try these solutions:
+                    <ul>
+                        <li>Refresh the page and try again</li>
+                        <li>Check your browser's address bar for camera icon</li>
+                        <li>Make sure no other app is using the camera</li>
+                        <li>Try using Chrome or Edge browser</li>
+                        <li>Check your browser's camera permissions in settings</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+        
+        async function testCamera() {
+            const statusDiv = document.getElementById('status');
+            const testBtn = document.getElementById('testBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const videoContainer = document.getElementById('videoContainer');
+            const video = document.getElementById('video');
+            
+            testBtn.disabled = true;
+            statusDiv.className = 'status warning';
+            statusDiv.textContent = 'Requesting camera access...';
+            
+            try {
+                // Check if getUserMedia is supported
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera not supported in this browser');
+                }
+                
+                // First check available devices
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    throw new Error('No camera devices found');
+                }
+                
+                // Request camera access with fallback
+                try {
+                    // Try with environment camera first
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            facingMode: "environment",
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        } 
+                    });
+                } catch (envError) {
+                    console.log('Environment camera failed, trying any camera:', envError);
+                    // Fallback to any available camera
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        } 
+                    });
+                }
+                
+                // Success!
+                video.srcObject = stream;
+                videoContainer.style.display = 'block';
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Camera access successful! You can now use the scanner in the main app.';
+                stopBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                statusDiv.className = 'status error';
+                
+                if (error.name === 'NotAllowedError') {
+                    statusDiv.innerHTML = '❌ Camera permission denied. Please:<br>' +
+                        '1. Click "Allow" when prompted<br>' +
+                        '2. Check your browser\'s address bar for camera icon<br>' +
+                        '3. Try refreshing the page<br>' +
+                        '4. Use Chrome or Edge for better support';
+                } else if (error.name === 'NotFoundError' || error.message.includes('No camera devices found')) {
+                    statusDiv.innerHTML = '❌ No camera found. Please:<br>' +
+                        '1. Ensure your device has a camera<br>' +
+                        '2. Check if another application is using the camera<br>' +
+                        '3. Try refreshing the page<br>' +
+                        '4. Use a different device with a camera';
+                } else if (error.name === 'NotSupportedError') {
+                    statusDiv.textContent = '❌ Camera not supported on this device.';
+                } else {
+                    statusDiv.textContent = '❌ Camera error: ' + error.message;
+                }
+            }
+            
+            testBtn.disabled = false;
+        }
+        
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            document.getElementById('video').srcObject = null;
+            document.getElementById('videoContainer').style.display = 'none';
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('status').className = 'status warning';
+            document.getElementById('status').textContent = 'Camera stopped. Click "Test Camera" to try again.';
+        }
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', stopCamera);
+    </script>
+</body>
+</html>
