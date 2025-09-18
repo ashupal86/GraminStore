@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { api } from '../services/api';
 
 const LandingPage = () => {
   const [feedback, setFeedback] = useState({
@@ -8,6 +9,8 @@ const LandingPage = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPopulating, setIsPopulating] = useState(false);
+  const [populateStatus, setPopulateStatus] = useState<string | null>(null);
 
   const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +27,25 @@ const LandingPage = () => {
       ...prev,
       [e.target.name]: e.target.value
     }));
+  };
+
+  const handlePopulateDatabase = async () => {
+    setIsPopulating(true);
+    setPopulateStatus(null);
+    
+    try {
+      const response = await api.post('/admin/populate-database');
+      
+      if (response.data.success) {
+        setPopulateStatus(`✅ Database populated successfully! Created ${response.data.data.merchants} merchants, ${response.data.data.users} users, and ${response.data.data.guest_users} guest users.`);
+      } else {
+        setPopulateStatus(`❌ Error: ${response.data.message}`);
+      }
+    } catch (error: any) {
+      setPopulateStatus(`❌ Error: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsPopulating(false);
+    }
   };
 
   return (
@@ -430,6 +452,53 @@ const LandingPage = () => {
             >
               Contact Sales
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Database Population Section - Development Only */}
+      <section className="py-20 bg-yellow-50 dark:bg-yellow-900/20 border-t border-yellow-200 dark:border-yellow-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-yellow-800 dark:text-yellow-200 mb-6">
+              🛠️ Development Tools
+            </h2>
+            <p className="text-xl text-yellow-700 dark:text-yellow-300 mb-8">
+              Populate the database with sample data for testing and development.
+            </p>
+            
+            <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-yellow-200 dark:border-yellow-700">
+              <div className="mb-6">
+                <button
+                  onClick={handlePopulateDatabase}
+                  disabled={isPopulating}
+                  className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-400 text-white px-8 py-4 rounded-lg font-semibold text-lg transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:cursor-not-allowed min-w-[250px]"
+                >
+                  {isPopulating ? '🔄 Populating Database...' : '🚀 Populate Database'}
+                </button>
+              </div>
+              
+              {populateStatus && (
+                <div className={`p-4 rounded-lg text-sm ${
+                  populateStatus.includes('✅') 
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-700' 
+                    : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-700'
+                }`}>
+                  {populateStatus}
+                </div>
+              )}
+              
+              <div className="mt-6 text-sm text-yellow-600 dark:text-yellow-400">
+                <p><strong>Note:</strong> This will create sample merchants, users, and transactions for testing purposes.</p>
+                <p className="mt-2">
+                  <strong>Test Credentials:</strong><br/>
+                  Admin: admin@graminstore.com / admin123<br/>
+                  Test Merchant: test@example.com / Merchant123<br/>
+                  Other Merchants: [email] / merchant123<br/>
+                  Users: [email] / user123
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
